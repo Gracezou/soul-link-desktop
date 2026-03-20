@@ -10,7 +10,6 @@ const TOTAL_STEPS = 4
 export function OnboardingWizard(): React.ReactElement {
   const [step, setStep] = useState(0)
 
-  // Collected settings
   const [language, setLanguage] = useState('zh-CN')
   const [gatewayWsUrl, setGatewayWsUrl] = useState('ws://localhost:18789/')
   const [authToken, setAuthToken] = useState('')
@@ -22,36 +21,19 @@ export function OnboardingWizard(): React.ReactElement {
   const back = () => setStep(s => s - 1)
 
   async function handleFinish() {
-    // Persist all settings
     await window.electronAPI?.invoke('settings:set', {
-      openclaw: {
-        gatewayWsUrl,
-        authToken,
-        defaultCard: selectedCard,
-      },
-      companion: {
-        enabled: companionEnabled,
-        idleMinutes,
-      },
-      pet: {
-        character: selectedCard,
-      },
-      ui: {
-        language,
-      },
-      onboarding: {
-        completed: true,
-        completedAt: new Date().toISOString(),
-      },
+      openclaw: { gatewayWsUrl, authToken, defaultCard: selectedCard },
+      companion: { enabled: companionEnabled, idleMinutes },
+      pet: { character: selectedCard },
+      ui: { language },
+      onboarding: { completed: true, completedAt: new Date().toISOString() },
     })
-    // Notify main process to close this window and launch pet window
     window.electronAPI?.send('onboarding:complete')
   }
 
   return (
     <div className={styles.overlay}>
       <div className={styles.card}>
-        {/* Step indicator */}
         <div className={styles.dots}>
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
             <div key={i} className={`${styles.dot} ${i === step ? styles.active : ''}`} />
@@ -67,7 +49,6 @@ export function OnboardingWizard(): React.ReactElement {
         )}
         {step === 1 && (
           <ConnectionStep
-            language={language}
             gatewayWsUrl={gatewayWsUrl}
             authToken={authToken}
             onGatewayChange={setGatewayWsUrl}
@@ -78,7 +59,6 @@ export function OnboardingWizard(): React.ReactElement {
         )}
         {step === 2 && (
           <CharacterStep
-            language={language}
             selectedCard={selectedCard}
             onSelect={setSelectedCard}
             onNext={next}
@@ -87,7 +67,6 @@ export function OnboardingWizard(): React.ReactElement {
         )}
         {step === 3 && (
           <CompanionStep
-            language={language}
             companionEnabled={companionEnabled}
             idleMinutes={idleMinutes}
             onToggle={setCompanionEnabled}

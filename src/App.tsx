@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ChatWindow } from './chat/ChatWindow'
 import { SettingsPanel } from './settings/SettingsPanel'
 import { OnboardingWizard } from './onboarding/OnboardingWizard'
@@ -8,6 +9,18 @@ const page = new URLSearchParams(window.location.search).get('page')
 
 function App(): React.ReactElement {
   useBridge()
+  const { t, i18n } = useTranslation()
+
+  // Sync language from persisted settings on startup
+  useEffect(() => {
+    window.electronAPI?.invoke('settings:get').then((s) => {
+      const lang = (s as { ui?: { language?: string } } | undefined)?.ui?.language
+      if (lang && lang !== i18n.language) {
+        void i18n.changeLanguage(lang)
+      }
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (page === 'settings') {
     return <SettingsPanel />
@@ -34,7 +47,7 @@ function App(): React.ReactElement {
           padding: '4px 8px',
           borderRadius: '4px',
         }}
-        title="关闭"
+        title={t('common.close')}
       >
         ✕
       </button>

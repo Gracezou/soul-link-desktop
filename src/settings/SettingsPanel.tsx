@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ConnectionSection } from './ConnectionSection'
 import { CharacterSection } from './CharacterSection'
 import { CompanionSection } from './CompanionSection'
@@ -8,6 +9,7 @@ import styles from './settings.module.css'
 type Tab = 'connection' | 'character' | 'companion' | 'about'
 
 export function SettingsPanel(): React.ReactElement {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<Tab>('connection')
   const [settings, setSettings] = useState<Record<string, unknown> | null>(null)
 
@@ -18,16 +20,16 @@ export function SettingsPanel(): React.ReactElement {
   }, [])
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'connection', label: '连接' },
-    { id: 'character', label: '角色' },
-    { id: 'companion', label: '陪伴' },
-    { id: 'about', label: '关于' },
+    { id: 'connection', label: t('settings.tabs.connection') },
+    { id: 'character', label: t('settings.tabs.character') },
+    { id: 'companion', label: t('settings.tabs.companion') },
+    { id: 'about', label: t('settings.tabs.about') },
   ]
 
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
-        <h2 className={styles.title}>Soul Link 设置</h2>
+        <h2 className={styles.title}>{t('settings.title')}</h2>
         <button
           className={styles.closeBtn}
           onClick={() => window.electronAPI?.send('window:close')}

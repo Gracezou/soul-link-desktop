@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import styles from './settings.module.css'
 
 interface Props {
@@ -6,6 +7,7 @@ interface Props {
 }
 
 export function ConnectionSection({ settings }: Props): React.ReactElement {
+  const { t } = useTranslation()
   const openclaw = settings?.openclaw as Record<string, unknown> | undefined
 
   const [url, setUrl] = useState(String(openclaw?.gatewayWsUrl ?? 'ws://188.239.18.173:4000/'))
@@ -25,29 +27,29 @@ export function ConnectionSection({ settings }: Props): React.ReactElement {
     await window.electronAPI?.invoke('settings:set', {
       openclaw: { gatewayWsUrl: url, authToken: token, sessionKey },
     })
-    setTestResult('已保存')
+    setTestResult(t('settings.connection.saved'))
     setTimeout(() => setTestResult(null), 2000)
   }
 
   async function handleTest(): Promise<void> {
-    setTestResult('测试中…')
+    setTestResult(t('common.testing'))
     try {
       const result = await window.electronAPI?.invoke('bridge:test-connection', {
-        url, token,
+        gatewayWsUrl: url, authToken: token,
       })
-      setTestResult(result ? '连接成功 ✓' : '连接失败 ✗')
+      setTestResult(result ? t('settings.connection.testSuccess') : t('settings.connection.testFailed'))
     } catch {
-      setTestResult('连接失败 ✗')
+      setTestResult(t('settings.connection.testFailed'))
     }
     setTimeout(() => setTestResult(null), 3000)
   }
 
   return (
     <div className={styles.section}>
-      <h3 className={styles.sectionTitle}>OpenClaw 网关</h3>
+      <h3 className={styles.sectionTitle}>{t('settings.connection.title')}</h3>
 
       <label className={styles.field}>
-        <span className={styles.label}>网关地址</span>
+        <span className={styles.label}>{t('settings.connection.gatewayLabel')}</span>
         <input
           className={styles.input}
           value={url}
@@ -57,18 +59,18 @@ export function ConnectionSection({ settings }: Props): React.ReactElement {
       </label>
 
       <label className={styles.field}>
-        <span className={styles.label}>Token</span>
+        <span className={styles.label}>{t('settings.connection.tokenLabel')}</span>
         <input
           className={styles.input}
           type="password"
           value={token}
           onChange={e => setToken(e.target.value)}
-          placeholder="Gateway auth token"
+          placeholder={t('settings.connection.tokenPlaceholder')}
         />
       </label>
 
       <label className={styles.field}>
-        <span className={styles.label}>Session Key</span>
+        <span className={styles.label}>{t('settings.connection.sessionKeyLabel')}</span>
         <input
           className={styles.input}
           value={sessionKey}
@@ -79,10 +81,10 @@ export function ConnectionSection({ settings }: Props): React.ReactElement {
 
       <div className={styles.actions}>
         <button className={styles.btnSecondary} onClick={() => void handleTest()}>
-          测试连接
+          {t('settings.connection.testBtn')}
         </button>
         <button className={styles.btnPrimary} onClick={() => void handleSave()}>
-          保存
+          {t('common.save')}
         </button>
       </div>
 

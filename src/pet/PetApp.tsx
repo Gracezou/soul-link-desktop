@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PetCanvas } from './PetCanvas'
 import { Toolbar } from '../toolbar/Toolbar'
 import { useBridge } from '../hooks/useBridge'
@@ -6,7 +7,7 @@ import type { Manifest } from './AnimationEngine'
 
 export function PetApp(): React.ReactElement {
   useBridge()
-
+  const { t } = useTranslation()
   const [hasSprites, setHasSprites] = useState<boolean | null>(null)
 
   useEffect(() => {
@@ -53,11 +54,10 @@ export function PetApp(): React.ReactElement {
           }}>
             <span style={{ fontSize: 28 }}>🌸</span>
             <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', textAlign: 'center', padding: '0 12px' }}>
-              等待角色立绘...
+              {t('pet.placeholder')}
             </span>
           </div>
         ) : (
-          // Render canvas while checking (null) or when sprites confirmed (true)
           <PetCanvas />
         )}
       </div>

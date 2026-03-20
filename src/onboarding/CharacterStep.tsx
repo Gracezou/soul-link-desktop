@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import styles from './onboarding.module.css'
 
 interface CharacterInfo {
@@ -9,7 +10,6 @@ interface CharacterInfo {
 }
 
 interface CharacterStepProps {
-  language: string
   selectedCard: string
   onSelect: (cardId: string) => void
   onNext: () => void
@@ -17,20 +17,17 @@ interface CharacterStepProps {
 }
 
 export function CharacterStep({
-  language,
   selectedCard,
   onSelect,
   onNext,
   onBack,
 }: CharacterStepProps): React.ReactElement {
-  const isCN = language === 'zh-CN'
+  const { t } = useTranslation()
   const [characters, setCharacters] = useState<CharacterInfo[]>([])
 
   useEffect(() => {
-    // Scan res/cards/ for available character cards
     async function loadCards() {
       try {
-        // Fetch manifest or try known cards
         const knownCards = ['baiyuan']
         const loaded: CharacterInfo[] = []
 
@@ -66,15 +63,11 @@ export function CharacterStep({
 
   return (
     <>
-      <h1 className={styles.stepTitle}>{isCN ? '选择角色' : 'Choose Character'}</h1>
-      <p className={styles.stepSubtitle}>{isCN ? '选择你的桌面伴侣角色' : 'Pick your desktop companion'}</p>
+      <h1 className={styles.stepTitle}>{t('onboarding.character.title')}</h1>
+      <p className={styles.stepSubtitle}>{t('onboarding.character.subtitle')}</p>
 
       {characters.length === 0 ? (
-        <p className={styles.emptyCards}>
-          {isCN
-            ? '暂无角色卡，请将角色卡文件放入 res/cards/ 目录'
-            : 'No characters found. Place card files in res/cards/'}
-        </p>
+        <p className={styles.emptyCards}>{t('onboarding.character.noCards')}</p>
       ) : (
         <div className={styles.cardGrid}>
           {characters.map(char => (
@@ -98,13 +91,13 @@ export function CharacterStep({
       )}
 
       <div className={styles.navRow}>
-        <button className={styles.btnSecondary} onClick={onBack}>{isCN ? '上一步' : 'Back'}</button>
+        <button className={styles.btnSecondary} onClick={onBack}>{t('common.back')}</button>
         <button
           className={styles.btnPrimary}
           onClick={onNext}
           disabled={characters.length > 0 && !selectedCard}
         >
-          {isCN ? '下一步' : 'Next'}
+          {t('common.next')}
         </button>
       </div>
     </>

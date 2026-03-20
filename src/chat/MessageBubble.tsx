@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ChatMessage } from '../stores/chatStore'
 import styles from './chat.module.css'
 
@@ -7,10 +8,10 @@ interface Props {
 }
 
 export function MessageBubble({ message }: Props): React.ReactElement {
+  const { i18n } = useTranslation()
   const isUser = message.role === 'user'
 
   function renderAssistantText(text: string): React.ReactNode {
-    // Split by *action* patterns and render italic
     const parts = text.split(/(\*[^*]+\*)/g)
     return parts.map((part, i) => {
       if (part.startsWith('*') && part.endsWith('*')) {
@@ -27,7 +28,7 @@ export function MessageBubble({ message }: Props): React.ReactElement {
         : renderAssistantText(message.text)
       }
       <span className={styles.timestamp}>
-        {new Date(message.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+        {new Date(message.timestamp).toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}
       </span>
     </div>
   )

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import styles from './settings.module.css'
 
 type CompanionMode = 'balanced' | 'checkin' | 'question' | 'report'
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export function CompanionSection({ settings }: Props): React.ReactElement {
+  const { t } = useTranslation()
   const companion = settings?.companion as Record<string, unknown> | undefined
 
   const [enabled, setEnabled] = useState(Boolean(companion?.enabled ?? false))
@@ -29,18 +31,18 @@ export function CompanionSection({ settings }: Props): React.ReactElement {
   }
 
   const modeOptions: { value: CompanionMode; label: string }[] = [
-    { value: 'balanced', label: '均衡' },
-    { value: 'checkin', label: '关怀' },
-    { value: 'question', label: '提问' },
-    { value: 'report', label: '汇报' },
+    { value: 'balanced', label: t('settings.companion.mode.balanced') },
+    { value: 'checkin', label: t('settings.companion.mode.checkin') },
+    { value: 'question', label: t('settings.companion.mode.question') },
+    { value: 'report', label: t('settings.companion.mode.report') },
   ]
 
   return (
     <div className={styles.section}>
-      <h3 className={styles.sectionTitle}>主动互动</h3>
+      <h3 className={styles.sectionTitle}>{t('settings.companion.title')}</h3>
 
       <label className={styles.fieldRow}>
-        <span className={styles.label}>启用主动互动</span>
+        <span className={styles.label}>{t('settings.companion.enableLabel')}</span>
         <input
           type="checkbox"
           checked={enabled}
@@ -49,7 +51,7 @@ export function CompanionSection({ settings }: Props): React.ReactElement {
       </label>
 
       <label className={styles.field}>
-        <span className={styles.label}>空闲触发间隔（分钟）</span>
+        <span className={styles.label}>{t('settings.companion.idleLabel')}</span>
         <input
           className={styles.input}
           type="number"
@@ -62,7 +64,7 @@ export function CompanionSection({ settings }: Props): React.ReactElement {
       </label>
 
       <label className={styles.field}>
-        <span className={styles.label}>互动风格</span>
+        <span className={styles.label}>{t('settings.companion.styleLabel')}</span>
         <select
           className={styles.select}
           value={mode}
@@ -77,7 +79,7 @@ export function CompanionSection({ settings }: Props): React.ReactElement {
 
       <div className={styles.actions}>
         <button className={styles.btnPrimary} onClick={() => void handleSave()}>
-          保存
+          {t('common.save')}
         </button>
       </div>
     </div>

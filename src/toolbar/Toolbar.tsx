@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ToolbarItem } from './ToolbarItem'
 import styles from './toolbar.module.css'
 
@@ -8,6 +9,8 @@ interface ToolbarProps {
 }
 
 export function Toolbar({ onMouseEnter, onMouseLeave }: ToolbarProps): React.ReactElement {
+  const { t } = useTranslation()
+
   const handleToggleChat = useCallback(() => {
     window.electronAPI?.send('window:toggle-chat')
   }, [])
@@ -22,10 +25,10 @@ export function Toolbar({ onMouseEnter, onMouseLeave }: ToolbarProps): React.Rea
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <ToolbarItem icon="💬" label="打开聊天" onClick={handleToggleChat} />
-      <ToolbarItem icon="⚙️" label="设置" onClick={handleOpenSettings} />
-      <ToolbarItem icon="🎭" label="切换角色" comingSoon />
-      <ToolbarItem icon="📷" label="生成图片" comingSoon />
+      <ToolbarItem icon="💬" label={t('toolbar.chat')} onClick={handleToggleChat} />
+      <ToolbarItem icon="⚙️" label={t('toolbar.settings')} onClick={handleOpenSettings} />
+      <ToolbarItem icon="🎭" label={t('toolbar.character')} comingSoon />
+      <ToolbarItem icon="📷" label={t('toolbar.photo')} comingSoon />
     </div>
   )
 }

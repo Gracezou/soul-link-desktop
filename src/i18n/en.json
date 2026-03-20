@@ -1,0 +1,113 @@
+{
+  "common": {
+    "next": "Next",
+    "back": "Back",
+    "save": "Save",
+    "saved": "Saved",
+    "close": "Close",
+    "testing": "Testing…"
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Welcome to Soul Link ✨",
+      "subtitle": "Your AI desktop companion",
+      "selectLanguage": "Select Language"
+    },
+    "connection": {
+      "title": "Connect to OpenClaw",
+      "subtitle": "Enter your gateway URL and auth token",
+      "gatewayLabel": "Gateway URL",
+      "gatewayPlaceholder": "ws://localhost:18789/",
+      "tokenLabel": "Auth Token",
+      "tokenPlaceholder": "Paste your token",
+      "testBtn": "Test Connection",
+      "testSuccess": "✓ Connected",
+      "testFailed": "Connection failed",
+      "testError": "Error",
+      "testingBtn": "Testing…"
+    },
+    "character": {
+      "title": "Choose Character",
+      "subtitle": "Pick your desktop companion",
+      "noCards": "No characters found. Place card files in res/cards/"
+    },
+    "companion": {
+      "title": "Companion Settings",
+      "subtitle": "Let your companion reach out when you are idle",
+      "enable": "Enable proactive companion",
+      "idleInterval": "Idle trigger interval",
+      "warning": "⚠️ When enabled, your companion will initiate conversations during idle periods, consuming a small amount of tokens",
+      "finish": "Finish Setup ✓",
+      "minutesCount": "{{count}} min",
+      "hourCount": "{{count}} hr"
+    }
+  },
+  "toolbar": {
+    "chat": "Chat",
+    "settings": "Settings",
+    "character": "Switch Character",
+    "photo": "Generate Image",
+    "comingSoon": "Coming Soon"
+  },
+  "chat": {
+    "title": "Baiyuan",
+    "statusConnected": "● Connected",
+    "statusDisconnected": "○ Disconnected",
+    "loading": "Baiyuan is typing…",
+    "inputPlaceholder": "Send a message…",
+    "inputPlaceholderWaiting": "Waiting for connection…",
+    "send": "Send",
+    "openChat": "Open Chat"
+  },
+  "pet": {
+    "placeholder": "Waiting for sprites..."
+  },
+  "settings": {
+    "title": "Soul Link Settings",
+    "tabs": {
+      "connection": "Connection",
+      "character": "Character",
+      "companion": "Companion",
+      "about": "About"
+    },
+    "connection": {
+      "title": "OpenClaw Gateway",
+      "gatewayLabel": "Gateway URL",
+      "tokenLabel": "Token",
+      "tokenPlaceholder": "Gateway auth token",
+      "sessionKeyLabel": "Session Key",
+      "testBtn": "Test Connection",
+      "testSuccess": "Connected ✓",
+      "testFailed": "Connection failed ✗",
+      "saved": "Saved"
+    },
+    "character": {
+      "title": "Character",
+      "currentLabel": "Current Character",
+      "hint": "Multi-character switching is coming in a future version. Currently using the \"Baiyuan\" character card."
+    },
+    "companion": {
+      "title": "Proactive Interaction",
+      "enableLabel": "Enable proactive interaction",
+      "idleLabel": "Idle trigger interval (minutes)",
+      "styleLabel": "Interaction style",
+      "mode": {
+        "balanced": "Balanced",
+        "checkin": "Check-in",
+        "question": "Question",
+        "report": "Report"
+      }
+    },
+    "about": {
+      "title": "About",
+      "versionLabel": "Version",
+      "version": "Soul Link Desktop v0.1.0",
+      "techStackLabel": "Tech Stack",
+      "techStack": "Electron · React · TypeScript · OpenClaw",
+      "resetTitle": "Reset",
+      "resetHint": "Re-run the initial setup wizard to reconfigure your connection and character.",
+      "resetBtn": "Re-run Setup Wizard",
+      "resetting": "Resetting…"
+    }
+  }
+}

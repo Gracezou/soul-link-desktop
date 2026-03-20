@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import styles from './toolbar.module.css'
 
 interface ToolbarItemProps {
@@ -10,6 +11,7 @@ interface ToolbarItemProps {
 }
 
 export function ToolbarItem({ icon, label, onClick, disabled, comingSoon }: ToolbarItemProps): React.ReactElement {
+  const { t } = useTranslation()
   const [showTooltip, setShowTooltip] = useState(false)
 
   const handleClick = useCallback(() => {
@@ -17,7 +19,7 @@ export function ToolbarItem({ icon, label, onClick, disabled, comingSoon }: Tool
     onClick?.()
   }, [onClick, comingSoon, disabled])
 
-  const tooltipText = comingSoon ? '即将推出' : label
+  const tooltipText = comingSoon ? t('toolbar.comingSoon') : label
 
   return (
     <button

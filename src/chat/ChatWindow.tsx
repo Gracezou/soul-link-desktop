@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { MessageList } from './MessageList'
 import { useChat } from '../hooks/useChat'
 import styles from './chat.module.css'
 
 export function ChatWindow(): React.ReactElement {
+  const { t } = useTranslation()
   const [input, setInput] = useState('')
   const { messages, isLoading, sessionReady, sendMessage } = useChat()
 
@@ -24,16 +26,16 @@ export function ChatWindow(): React.ReactElement {
   return (
     <div className={styles.chatWindow}>
       <div className={styles.chatHeader}>
-        <span className={styles.characterName}>柏源</span>
+        <span className={styles.characterName}>{t('chat.title')}</span>
         <span className={styles.sessionStatus}>
-          {sessionReady ? '● 已连接' : '○ 未连接'}
+          {sessionReady ? t('chat.statusConnected') : t('chat.statusDisconnected')}
         </span>
       </div>
 
       <MessageList messages={messages} />
 
       {isLoading && (
-        <div className={styles.loadingIndicator}>柏源正在回复…</div>
+        <div className={styles.loadingIndicator}>{t('chat.loading')}</div>
       )}
 
       <div className={styles.inputArea}>
@@ -42,7 +44,7 @@ export function ChatWindow(): React.ReactElement {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={sessionReady ? '发送消息…' : '等待连接…'}
+          placeholder={sessionReady ? t('chat.inputPlaceholder') : t('chat.inputPlaceholderWaiting')}
           disabled={!sessionReady || isLoading}
         />
         <button
@@ -50,7 +52,7 @@ export function ChatWindow(): React.ReactElement {
           onClick={() => void handleSend()}
           disabled={!sessionReady || isLoading || !input.trim()}
         >
-          发送
+          {t('chat.send')}
         </button>
       </div>
     </div>

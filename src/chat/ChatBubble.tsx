@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import styles from './ChatBubble.module.css'
 
 export function ChatBubble(): React.ReactElement {
+  const { t } = useTranslation()
   const [isHovered, setIsHovered] = useState(false)
 
   function handleClick(): void {
@@ -14,7 +16,7 @@ export function ChatBubble(): React.ReactElement {
       onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      title="打开聊天"
+      title={t('chat.openChat')}
     >
       <span className={styles.icon}>💬</span>
     </div>

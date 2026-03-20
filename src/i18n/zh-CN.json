@@ -1,0 +1,113 @@
+{
+  "common": {
+    "next": "下一步",
+    "back": "上一步",
+    "save": "保存",
+    "saved": "已保存",
+    "close": "关闭",
+    "testing": "测试中…"
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "欢迎来到 Soul Link ✨",
+      "subtitle": "你的 AI 桌面情感伴侣",
+      "selectLanguage": "选择语言"
+    },
+    "connection": {
+      "title": "连接 OpenClaw 网关",
+      "subtitle": "输入你的网关地址和鉴权令牌",
+      "gatewayLabel": "网关地址",
+      "gatewayPlaceholder": "ws://localhost:18789/",
+      "tokenLabel": "Auth Token",
+      "tokenPlaceholder": "粘贴你的令牌",
+      "testBtn": "测试连接",
+      "testSuccess": "✓ 连接成功",
+      "testFailed": "连接失败",
+      "testError": "连接出错",
+      "testingBtn": "测试中…"
+    },
+    "character": {
+      "title": "选择角色",
+      "subtitle": "选择你的桌面伴侣角色",
+      "noCards": "暂无角色卡，请将角色卡文件放入 res/cards/ 目录"
+    },
+    "companion": {
+      "title": "主动伴侣设置",
+      "subtitle": "空闲时让角色主动和你打招呼",
+      "enable": "启用待机主动对话",
+      "idleInterval": "空闲触发间隔",
+      "warning": "⚠️ 启用后角色会在空闲时主动与你对话，会产生少量 Token 消耗",
+      "finish": "完成设置 ✓",
+      "minutesCount": "{{count}} 分钟",
+      "hourCount": "{{count}} 小时"
+    }
+  },
+  "toolbar": {
+    "chat": "对话",
+    "settings": "设置",
+    "character": "切换角色",
+    "photo": "生成图片",
+    "comingSoon": "即将推出"
+  },
+  "chat": {
+    "title": "柏源",
+    "statusConnected": "● 已连接",
+    "statusDisconnected": "○ 未连接",
+    "loading": "柏源正在回复…",
+    "inputPlaceholder": "发送消息…",
+    "inputPlaceholderWaiting": "等待连接…",
+    "send": "发送",
+    "openChat": "打开聊天"
+  },
+  "pet": {
+    "placeholder": "等待角色立绘..."
+  },
+  "settings": {
+    "title": "Soul Link 设置",
+    "tabs": {
+      "connection": "连接",
+      "character": "角色",
+      "companion": "陪伴",
+      "about": "关于"
+    },
+    "connection": {
+      "title": "OpenClaw 网关",
+      "gatewayLabel": "网关地址",
+      "tokenLabel": "Token",
+      "tokenPlaceholder": "Gateway auth token",
+      "sessionKeyLabel": "Session Key",
+      "testBtn": "测试连接",
+      "testSuccess": "连接成功 ✓",
+      "testFailed": "连接失败 ✗",
+      "saved": "已保存"
+    },
+    "character": {
+      "title": "角色",
+      "currentLabel": "当前角色",
+      "hint": "多角色切换功能正在开发中（MVP 后续版本）。当前固定使用「柏源」角色卡。"
+    },
+    "companion": {
+      "title": "主动互动",
+      "enableLabel": "启用主动互动",
+      "idleLabel": "空闲触发间隔（分钟）",
+      "styleLabel": "互动风格",
+      "mode": {
+        "balanced": "均衡",
+        "checkin": "关怀",
+        "question": "提问",
+        "report": "汇报"
+      }
+    },
+    "about": {
+      "title": "关于",
+      "versionLabel": "版本",
+      "version": "Soul Link Desktop v0.1.0",
+      "techStackLabel": "技术栈",
+      "techStack": "Electron · React · TypeScript · OpenClaw",
+      "resetTitle": "重置",
+      "resetHint": "重新运行初始引导流程，可用于重新配置连接和角色。",
+      "resetBtn": "重新运行初始化引导",
+      "resetting": "重置中…"
+    }
+  }
+}

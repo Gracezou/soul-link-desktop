@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import styles from './onboarding.module.css'
 
 interface ConnectionStepProps {
-  language: string
   gatewayWsUrl: string
   authToken: string
   onGatewayChange: (v: string) => void
@@ -12,7 +12,6 @@ interface ConnectionStepProps {
 }
 
 export function ConnectionStep({
-  language,
   gatewayWsUrl,
   authToken,
   onGatewayChange,
@@ -20,7 +19,7 @@ export function ConnectionStep({
   onNext,
   onBack,
 }: ConnectionStepProps): React.ReactElement {
-  const isCN = language === 'zh-CN'
+  const { t } = useTranslation()
   const [showToken, setShowToken] = useState(false)
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
@@ -35,44 +34,44 @@ export function ConnectionStep({
       }) as { success: boolean; error?: string } | undefined
 
       if (result?.success) {
-        setTestResult({ success: true, message: isCN ? '✓ 连接成功' : '✓ Connected' })
+        setTestResult({ success: true, message: t('onboarding.connection.testSuccess') })
       } else {
-        setTestResult({ success: false, message: result?.error ?? (isCN ? '连接失败' : 'Connection failed') })
+        setTestResult({ success: false, message: result?.error ?? t('onboarding.connection.testFailed') })
       }
     } catch {
-      setTestResult({ success: false, message: isCN ? '连接出错' : 'Error' })
+      setTestResult({ success: false, message: t('onboarding.connection.testError') })
     } finally {
       setTesting(false)
     }
-  }, [gatewayWsUrl, authToken, isCN])
+  }, [gatewayWsUrl, authToken, t])
 
   const canProceed = testResult?.success === true
 
   return (
     <>
-      <h1 className={styles.stepTitle}>{isCN ? '连接 OpenClaw 网关' : 'Connect to OpenClaw'}</h1>
-      <p className={styles.stepSubtitle}>{isCN ? '输入你的网关地址和鉴权令牌' : 'Enter your gateway URL and auth token'}</p>
+      <h1 className={styles.stepTitle}>{t('onboarding.connection.title')}</h1>
+      <p className={styles.stepSubtitle}>{t('onboarding.connection.subtitle')}</p>
 
       <div className={styles.field}>
-        <label className={styles.label}>{isCN ? '网关地址' : 'Gateway URL'}</label>
+        <label className={styles.label}>{t('onboarding.connection.gatewayLabel')}</label>
         <input
           className={styles.input}
           type="text"
           value={gatewayWsUrl}
           onChange={e => { onGatewayChange(e.target.value); setTestResult(null) }}
-          placeholder="ws://localhost:18789/"
+          placeholder={t('onboarding.connection.gatewayPlaceholder')}
         />
       </div>
 
       <div className={styles.field}>
-        <label className={styles.label}>{isCN ? 'Auth Token' : 'Auth Token'}</label>
+        <label className={styles.label}>{t('onboarding.connection.tokenLabel')}</label>
         <div className={styles.inputWrapper}>
           <input
             className={styles.input}
             type={showToken ? 'text' : 'password'}
             value={authToken}
             onChange={e => { onTokenChange(e.target.value); setTestResult(null) }}
-            placeholder={isCN ? '粘贴你的令牌' : 'Paste your token'}
+            placeholder={t('onboarding.connection.tokenPlaceholder')}
           />
           <button className={styles.eyeButton} onClick={() => setShowToken(v => !v)}>
             {showToken ? '🙈' : '👁️'}
@@ -86,7 +85,7 @@ export function ConnectionStep({
           onClick={handleTest}
           disabled={testing || !gatewayWsUrl || !authToken}
         >
-          {testing ? (isCN ? '测试中…' : 'Testing…') : (isCN ? '测试连接' : 'Test Connection')}
+          {testing ? t('onboarding.connection.testingBtn') : t('onboarding.connection.testBtn')}
         </button>
         {testResult && (
           <span className={`${styles.testResult} ${testResult.success ? styles.success : styles.error}`}>
@@ -96,9 +95,9 @@ export function ConnectionStep({
       </div>
 
       <div className={styles.navRow}>
-        <button className={styles.btnSecondary} onClick={onBack}>{isCN ? '上一步' : 'Back'}</button>
+        <button className={styles.btnSecondary} onClick={onBack}>{t('common.back')}</button>
         <button className={styles.btnPrimary} onClick={onNext} disabled={!canProceed}>
-          {isCN ? '下一步' : 'Next'}
+          {t('common.next')}
         </button>
       </div>
     </>
