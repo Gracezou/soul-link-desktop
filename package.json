@@ -13,6 +13,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.0.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
@@ -23,6 +24,8 @@
     "electron": "^29.0.0",
     "electron-builder": "^24.0.0",
     "electronmon": "^2.0.0",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.6",
     "typescript": "^5.0.0",
     "vite": "^5.0.0"
   },
@@ -33,6 +36,16 @@
     "uuid": "^13.0.0",
     "ws": "^8.0.0",
     "zustand": "^4.0.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.test.ts"
+    ],
+    "moduleNameMapper": {
+      "electron": "<rootDir>/tests/__mocks__/electron.ts"
+    }
   },
   "build": {
     "appId": "com.soullink.desktop",
