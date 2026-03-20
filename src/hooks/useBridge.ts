@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { useChatStore } from '../stores/chatStore'
 import { usePetStore } from '../stores/petStore'
+import { parseResponse } from '../utils/responseParser'
+import { mapEmotionToAnimation } from '../utils/emotionMapper'
 
 // Inline bridge message types — do not import from electron/ (cross-process boundary)
 interface BridgeMessage {
@@ -29,6 +31,7 @@ export function useBridge(): void {
   const addAssistantMessage = useChatStore(s => s.addAssistantMessage)
   const setSessionStatus = useChatStore(s => s.setSessionStatus)
   const setAnimationFromEmotion = usePetStore(s => s.setAnimationFromEmotion)
+  const addFV = usePetStore(s => s.addFV)
 
   useEffect(() => {
     const api = window.electronAPI
@@ -37,7 +40,11 @@ export function useBridge(): void {
     api.on('bridge:message', (...args: unknown[]) => {
       const msg = args[0] as BridgeMessage
       addAssistantMessage(msg.text)
-      // TODO: get emotion from parsed response and update pet animation
+      // Map response emotions to pet animation
+      const parsed = parseResponse(msg.text)
+      const cmd = mapEmotionToAnimation(parsed)
+      setAnimationFromEmotion(parsed.emotions[0] ?? 'talk')
+      addFV(cmd.fvDelta)
     })
 
     api.on('bridge:session', (...args: unknown[]) => {
@@ -59,5 +66,5 @@ export function useBridge(): void {
       api.removeAllListeners('bridge:connected')
       api.removeAllListeners('bridge:disconnected')
     }
-  }, [addAssistantMessage, setSessionStatus, setAnimationFromEmotion])
+  }, [addAssistantMessage, setSessionStatus, setAnimationFromEmotion, addFV])
 }
