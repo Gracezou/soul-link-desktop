@@ -3,34 +3,33 @@ import path from 'path'
 import { IPC } from './ipc'
 import { BridgeWorker } from './bridge/worker'
 import { DEFAULT_BRIDGE_CONFIG } from './bridge/config'
+import { createPetWindow } from './windows/petWindow'
+import { createChatWindow } from './windows/chatWindow'
 
 const isDev = !app.isPackaged
 
-let mainWindow: BrowserWindow | null = null
+let mainWindow: BrowserWindow | null = null   // chat window
+let petWindow: BrowserWindow | null = null
 let bridgeWorker: BridgeWorker | null = null
 
-function createMainWindow(): BrowserWindow {
-  const win = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
-  })
-
-  if (isDev) {
-    win.loadURL('http://localhost:5173')
-    win.webContents.openDevTools()
-  } else {
-    win.loadFile(path.join(__dirname, '../dist/index.html'))
+function createChatWindowInstance(): BrowserWindow {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.focus()
+    return mainWindow
   }
 
-  return win
+  const pet = petWindow!
+  mainWindow = createChatWindow(pet)
+
+  mainWindow.on('closed', () => {
+    mainWindow = null
+  })
+
+  return mainWindow
 }
 
 function setupIpcHandlers(): void {
+  // Bridge
   ipcMain.handle(IPC.BRIDGE_SEND, async (_event, data: { message: string }) => {
     await bridgeWorker?.sendMessage(data.message)
   })
@@ -42,22 +41,74 @@ function setupIpcHandlers(): void {
   ipcMain.handle(IPC.SETTINGS_GET, async () => {
     return DEFAULT_BRIDGE_CONFIG
   })
+
+  // Pet window click-through toggle
+  ipcMain.on(IPC.PET_MOUSE_ENTER, () => {
+    petWindow?.setIgnoreMouseEvents(false)
+  })
+
+  ipcMain.on(IPC.PET_MOUSE_LEAVE, () => {
+    petWindow?.setIgnoreMouseEvents(true, { forward: true })
+  })
+
+  // Open chat window from bubble
+  ipcMain.on('chat:open', () => {
+    createChatWindowInstance()
+  })
+
+  // Close window (for frameless windows)
+  ipcMain.on('window:close', (event) => {
+    BrowserWindow.fromWebContents(event.sender)?.close()
+  })
+
+  // Pet drag — move the pet window
+  let dragStartScreenX = 0
+  let dragStartScreenY = 0
+  let winStartX = 0
+  let winStartY = 0
+
+  ipcMain.on('pet:drag-start', (_event, data: { x: number; y: number }) => {
+    const bounds = petWindow?.getBounds()
+    if (!bounds) return
+    dragStartScreenX = (data as { x: number; y: number }).x
+    dragStartScreenY = (data as { x: number; y: number }).y
+    winStartX = bounds.x
+    winStartY = bounds.y
+  })
+
+  ipcMain.on('pet:drag-move', (_event, data: { x: number; y: number }) => {
+    if (!petWindow) return
+    const dx = (data as { x: number; y: number }).x - dragStartScreenX
+    const dy = (data as { x: number; y: number }).y - dragStartScreenY
+    petWindow.setPosition(winStartX + dx, winStartY + dy)
+  })
+
+  ipcMain.on('pet:drag-end', () => {
+    // Physics drop handled in renderer; window position already updated
+  })
 }
 
 app.whenReady().then(async () => {
-  mainWindow = createMainWindow()
+  // Create pet window first
+  petWindow = createPetWindow()
+
+  // Create chat window (initially visible in dev for testing)
+  if (isDev) {
+    mainWindow = createChatWindowInstance()
+  }
+
   setupIpcHandlers()
 
-  // Initialize bridge worker with default config (settings module will override later)
+  // Initialize bridge worker
   bridgeWorker = new BridgeWorker(DEFAULT_BRIDGE_CONFIG)
-  bridgeWorker.setMainWindow(mainWindow)
+  bridgeWorker.setMainWindow(petWindow)
 
-  // Don't auto-start bridge in dev without a token
+  // Don't auto-start bridge without a token configured
   // bridgeWorker.start()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      mainWindow = createMainWindow()
+      petWindow = createPetWindow()
     }
   })
 })

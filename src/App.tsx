@@ -5,8 +5,31 @@ import { useBridge } from './hooks/useBridge'
 function App(): React.ReactElement {
   useBridge()
 
+  function handleClose(): void {
+    window.electronAPI?.send('window:close')
+  }
+
   return (
-    <div style={{ height: '100vh', overflow: 'hidden' }}>
+    <div style={{ height: '100vh', overflow: 'hidden', position: 'relative' }}>
+      <button
+        onClick={handleClose}
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          zIndex: 100,
+          background: 'transparent',
+          border: 'none',
+          color: '#888',
+          fontSize: '16px',
+          cursor: 'pointer',
+          padding: '4px 8px',
+          borderRadius: '4px',
+        }}
+        title="关闭"
+      >
+        ✕
+      </button>
       <ChatWindow />
     </div>
   )
