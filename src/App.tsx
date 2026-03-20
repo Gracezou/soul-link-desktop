@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { ChatWindow } from './chat/ChatWindow'
 import { SettingsPanel } from './settings/SettingsPanel'
+import { OnboardingWizard } from './onboarding/OnboardingWizard'
 import { useBridge } from './hooks/useBridge'
 
 const page = new URLSearchParams(window.location.search).get('page')
@@ -8,12 +9,41 @@ const page = new URLSearchParams(window.location.search).get('page')
 function App(): React.ReactElement {
   useBridge()
 
+  const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    async function checkOnboarding() {
+      try {
+        const settings = await window.electronAPI?.invoke('settings:get') as {
+          onboarding?: { completed?: boolean }
+        } | undefined
+        setOnboardingDone(settings?.onboarding?.completed === true)
+      } catch {
+        setOnboardingDone(true) // fail open
+      }
+    }
+    void checkOnboarding()
+  }, [])
+
   function handleClose(): void {
     window.electronAPI?.send('window:close')
   }
 
   if (page === 'settings') {
     return <SettingsPanel />
+  }
+
+  // Wait until we know onboarding status
+  if (onboardingDone === null) {
+    return <div style={{ height: '100vh', background: '#fdf6f0' }} />
+  }
+
+  if (!onboardingDone) {
+    return (
+      <OnboardingWizard
+        onComplete={() => setOnboardingDone(true)}
+      />
+    )
   }
 
   return (

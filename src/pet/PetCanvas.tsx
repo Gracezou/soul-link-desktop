@@ -103,15 +103,6 @@ export function PetCanvas(): React.ReactElement {
     return () => cancelAnimationFrame(rafRef.current)
   }, [])
 
-  // Mouse enter/leave for click-through
-  const handleMouseEnter = useCallback(() => {
-    window.electronAPI?.send('pet:mouse-enter')
-  }, [])
-
-  const handleMouseLeave = useCallback(() => {
-    window.electronAPI?.send('pet:mouse-leave')
-  }, [])
-
   // Drag handling
   const isDraggingRef = useRef(false)
   const dragStartRef = useRef({ x: 0, y: 0 })
@@ -140,8 +131,6 @@ export function PetCanvas(): React.ReactElement {
       width={200}
       height={200}
       style={{ cursor: 'grab', display: 'block' }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}

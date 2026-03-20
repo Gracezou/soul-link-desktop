@@ -1,0 +1,375 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #fdf6f0 0%, #fce4ec 50%, #f3e5f5 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 40px 48px;
+  width: 480px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Step indicator */
+.dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.15);
+  transition: background 0.2s;
+}
+
+.dot.active {
+  background: #e91e8c;
+  width: 24px;
+  border-radius: 4px;
+}
+
+/* Content area */
+.stepTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: #2d1b2e;
+  margin: 0;
+  text-align: center;
+}
+
+.stepSubtitle {
+  font-size: 14px;
+  color: #7b6b7c;
+  text-align: center;
+  margin: -12px 0 0;
+}
+
+/* Form fields */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a3b4b;
+}
+
+.input {
+  padding: 10px 14px;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  outline: none;
+  transition: border-color 0.2s;
+  color: #2d1b2e;
+}
+
+.input:focus {
+  border-color: #e91e8c;
+}
+
+.inputWrapper {
+  position: relative;
+}
+
+.inputWrapper .input {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 44px;
+}
+
+.eyeButton {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #7b6b7c;
+  padding: 0;
+  line-height: 1;
+}
+
+/* Connection test */
+.testRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.testBtn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1.5px solid #e91e8c;
+  background: transparent;
+  color: #e91e8c;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.testBtn:hover {
+  background: #e91e8c;
+  color: white;
+}
+
+.testBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.testResult {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.testResult.success {
+  color: #2e7d32;
+}
+
+.testResult.error {
+  color: #c62828;
+}
+
+/* Language selector */
+.langRow {
+  display: flex;
+  gap: 12px;
+}
+
+.langBtn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  background: transparent;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  color: #2d1b2e;
+}
+
+.langBtn.selected {
+  border-color: #e91e8c;
+  background: rgba(233, 30, 140, 0.06);
+  font-weight: 600;
+  color: #e91e8c;
+}
+
+/* Character cards */
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.characterCard {
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+  background: transparent;
+}
+
+.characterCard.selected {
+  border-color: #e91e8c;
+  background: rgba(233, 30, 140, 0.06);
+}
+
+.characterCard:hover {
+  border-color: #e91e8c;
+}
+
+.characterAvatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 6px;
+}
+
+.characterAvatarPlaceholder {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f8bbd0, #ce93d8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin: 0 auto 6px;
+}
+
+.characterName {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2d1b2e;
+  margin-bottom: 4px;
+}
+
+.characterDesc {
+  font-size: 11px;
+  color: #7b6b7c;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.emptyCards {
+  text-align: center;
+  color: #7b6b7c;
+  font-size: 13px;
+  padding: 24px 0;
+}
+
+/* Companion toggle */
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toggleLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d1b2e;
+}
+
+.toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggleSlider {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.toggle input:checked + .toggleSlider {
+  background: #e91e8c;
+}
+
+.toggleSlider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggle input:checked + .toggleSlider::before {
+  transform: translateX(20px);
+}
+
+.sliderRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sliderLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #7b6b7c;
+}
+
+.sliderInput {
+  width: 100%;
+  accent-color: #e91e8c;
+}
+
+.warning {
+  font-size: 12px;
+  color: #e65100;
+  background: rgba(230, 81, 0, 0.08);
+  border-radius: 8px;
+  padding: 10px 14px;
+  line-height: 1.5;
+}
+
+/* Navigation */
+.navRow {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.btnSecondary {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(0, 0, 0, 0.12);
+  background: transparent;
+  font-size: 14px;
+  cursor: pointer;
+  color: #4a3b4b;
+  transition: background 0.15s;
+}
+
+.btnSecondary:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.btnPrimary {
+  padding: 10px 24px;
+  border-radius: 10px;
+  border: none;
+  background: #e91e8c;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btnPrimary:hover {
+  opacity: 0.9;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

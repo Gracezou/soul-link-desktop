@@ -11,6 +11,7 @@ interface SettingsState {
   petCharacter: string
   petScale: number
   language: string
+  onboardingCompleted: boolean
   updateSettings: (partial: Partial<Omit<SettingsState, 'updateSettings'>>) => void
 }
 
@@ -25,6 +26,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   petCharacter: 'baiyuan',
   petScale: 1.0,
   language: 'zh-CN',
+  onboardingCompleted: false,
 
   updateSettings: (partial) => set(partial),
 }))

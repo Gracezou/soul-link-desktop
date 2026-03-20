@@ -8,7 +8,7 @@ export function createPetWindow(): BrowserWindow {
 
   const win = new BrowserWindow({
     width: 200,
-    height: 200,
+    height: 240,
     x: width - 220,
     y: height - 220,
     transparent: true,

@@ -1,16 +1,23 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { PetCanvas } from './PetCanvas'
-import { ChatBubble } from '../chat/ChatBubble'
+import { Toolbar } from '../toolbar/Toolbar'
 import { useBridge } from '../hooks/useBridge'
-import styles from './pet.module.css'
 
 export function PetApp(): React.ReactElement {
   useBridge()
 
+  const handleMouseEnter = useCallback(() => {
+    window.electronAPI?.send('pet:mouse-enter')
+  }, [])
+
+  const handleMouseLeave = useCallback(() => {
+    window.electronAPI?.send('pet:mouse-leave')
+  }, [])
+
   return (
-    <div className={styles.petContainer}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 200, height: 240 }}>
       <PetCanvas />
-      <ChatBubble />
+      <Toolbar onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
     </div>
   )
 }

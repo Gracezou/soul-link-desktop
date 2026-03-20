@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage } from 'electron'
 import path from 'path'
+import WebSocket from 'ws'
 import { IPC } from './ipc'
 import { BridgeWorker } from './bridge/worker'
 import { DEFAULT_BRIDGE_CONFIG } from './bridge/config'
@@ -109,6 +110,52 @@ function setupIpcHandlers(): void {
 
   ipcMain.on('settings:open', () => {
     createSettingsWindowInstance()
+  })
+
+  ipcMain.on(IPC.WINDOW_TOGGLE_CHAT, () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isVisible()) {
+        mainWindow.hide()
+      } else {
+        mainWindow.show()
+        mainWindow.focus()
+      }
+    } else {
+      createChatWindowInstance()
+    }
+  })
+
+  ipcMain.on(IPC.WINDOW_OPEN_SETTINGS, () => {
+    createSettingsWindowInstance()
+  })
+
+  // Onboarding: test connection (temporary WebSocket probe)
+  ipcMain.handle(IPC.BRIDGE_TEST_CONNECTION, async (_event, data: { gatewayWsUrl: string; authToken: string }) => {
+    return new Promise<{ success: boolean; error?: string }>((resolve) => {
+      const timeout = setTimeout(() => {
+        ws.terminate()
+        resolve({ success: false, error: '连接超时' })
+      }, 8000)
+
+      const origin = data.gatewayWsUrl
+        .replace(/^ws:\/\//, 'http://')
+        .replace(/^wss:\/\//, 'https://')
+        .replace(/\/$/, '')
+
+      const url = `${data.gatewayWsUrl}?token=${encodeURIComponent(data.authToken)}`
+      const ws = new WebSocket(url, { headers: { origin } })
+
+      ws.on('open', () => {
+        clearTimeout(timeout)
+        ws.close()
+        resolve({ success: true })
+      })
+
+      ws.on('error', (err: Error) => {
+        clearTimeout(timeout)
+        resolve({ success: false, error: err.message })
+      })
+    })
   })
 
   ipcMain.on('window:close', (event) => {

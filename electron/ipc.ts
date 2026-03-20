@@ -22,4 +22,11 @@ export const IPC = {
   // Companion
   COMPANION_NUDGE: 'companion:nudge',
   COMPANION_STATUS: 'companion:status',
+
+  // Window management (from toolbar / renderer)
+  WINDOW_TOGGLE_CHAT: 'window:toggle-chat',
+  WINDOW_OPEN_SETTINGS: 'window:open-settings',
+
+  // Onboarding
+  BRIDGE_TEST_CONNECTION: 'bridge:test-connection',
 } as const

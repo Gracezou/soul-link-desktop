@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react'
 import { ConnectionSection } from './ConnectionSection'
 import { CharacterSection } from './CharacterSection'
 import { CompanionSection } from './CompanionSection'
+import { AboutSection } from './AboutSection'
 import styles from './settings.module.css'
 
-type Tab = 'connection' | 'character' | 'companion'
+type Tab = 'connection' | 'character' | 'companion' | 'about'
 
 export function SettingsPanel(): React.ReactElement {
   const [activeTab, setActiveTab] = useState<Tab>('connection')
@@ -20,6 +21,7 @@ export function SettingsPanel(): React.ReactElement {
     { id: 'connection', label: '连接' },
     { id: 'character', label: '角色' },
     { id: 'companion', label: '陪伴' },
+    { id: 'about', label: '关于' },
   ]
 
   return (
@@ -50,6 +52,7 @@ export function SettingsPanel(): React.ReactElement {
         {activeTab === 'connection' && <ConnectionSection settings={settings} />}
         {activeTab === 'character' && <CharacterSection settings={settings} />}
         {activeTab === 'companion' && <CompanionSection settings={settings} />}
+        {activeTab === 'about' && <AboutSection />}
       </div>
     </div>
   )

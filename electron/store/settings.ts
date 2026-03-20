@@ -24,6 +24,10 @@ interface SoulLinkSettings {
   ui: {
     language: string
   }
+  onboarding: {
+    completed: boolean
+    completedAt?: string
+  }
 }
 
 const defaults: SoulLinkSettings = {
@@ -49,6 +53,9 @@ const defaults: SoulLinkSettings = {
   },
   ui: {
     language: 'zh-CN',
+  },
+  onboarding: {
+    completed: false,
   },
 }
 
