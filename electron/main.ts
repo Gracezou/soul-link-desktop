@@ -1,4 +1,18 @@
 import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage } from 'electron'
+
+// Single instance lock — prevents duplicate windows on hot reload
+const gotTheLock = app.requestSingleInstanceLock()
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    const win = BrowserWindow.getAllWindows()[0]
+    if (win) {
+      if (win.isMinimized()) win.restore()
+      win.focus()
+    }
+  })
+}
 import path from 'path'
 import WebSocket from 'ws'
 import { IPC } from './ipc'
