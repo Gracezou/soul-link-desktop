@@ -1,0 +1,52 @@
+{
+  "name": "soul-link-desktop",
+  "version": "0.1.0",
+  "description": "AI-powered desktop companion for otome game fans",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "concurrently \"vite\" \"electronmon .\"",
+    "build": "tsc -p tsconfig.node.json && vite build && electron-builder",
+    "preview": "vite preview",
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "concurrently": "^8.0.0",
+    "electron": "^29.0.0",
+    "electron-builder": "^24.0.0",
+    "electronmon": "^2.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "electron-store": "^8.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "uuid": "^13.0.0",
+    "ws": "^8.0.0",
+    "zustand": "^4.0.0"
+  },
+  "build": {
+    "appId": "com.soullink.desktop",
+    "productName": "Soul Link Desktop",
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "res/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    }
+  }
+}

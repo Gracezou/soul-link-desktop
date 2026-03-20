@@ -1,0 +1,27 @@
+appId: com.soullink.desktop
+productName: Soul Link Desktop
+copyright: Copyright © 2026
+
+directories:
+  output: release
+
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - res/**/*
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: res/icons/tray.png
+
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  icon: res/icons/tray.png
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
