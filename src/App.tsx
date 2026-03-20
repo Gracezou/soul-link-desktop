@@ -1,12 +1,19 @@
 import React from 'react'
 import { ChatWindow } from './chat/ChatWindow'
+import { SettingsPanel } from './settings/SettingsPanel'
 import { useBridge } from './hooks/useBridge'
+
+const page = new URLSearchParams(window.location.search).get('page')
 
 function App(): React.ReactElement {
   useBridge()
 
   function handleClose(): void {
     window.electronAPI?.send('window:close')
+  }
+
+  if (page === 'settings') {
+    return <SettingsPanel />
   }
 
   return (
