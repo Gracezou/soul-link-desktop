@@ -29,4 +29,6 @@ export const IPC = {
 
   // Onboarding
   BRIDGE_TEST_CONNECTION: 'bridge:test-connection',
+  ONBOARDING_COMPLETE: 'onboarding:complete',
+  APP_RELAUNCH: 'app:relaunch',
 } as const

@@ -7,6 +7,7 @@ import { DEFAULT_BRIDGE_CONFIG } from './bridge/config'
 import { createPetWindow } from './windows/petWindow'
 import { createChatWindow } from './windows/chatWindow'
 import { createSettingsWindow } from './windows/settingsWindow'
+import { createOnboardingWindow } from './windows/onboardingWindow'
 import { getSettings, updateSettings } from './store/settings'
 import { CompanionScheduler } from './companion/scheduler'
 
@@ -15,6 +16,7 @@ const isDev = !app.isPackaged
 let mainWindow: BrowserWindow | null = null   // chat window
 let petWindow: BrowserWindow | null = null
 let settingsWindow: BrowserWindow | null = null
+let onboardingWindow: BrowserWindow | null = null
 let bridgeWorker: BridgeWorker | null = null
 let tray: Tray | null = null
 let companion: CompanionScheduler | null = null
@@ -189,49 +191,68 @@ function setupIpcHandlers(): void {
     // Window position already updated during drag
   })
 
+  // Onboarding complete: close onboarding window, launch main app
+  ipcMain.on(IPC.ONBOARDING_COMPLETE, () => {
+    if (onboardingWindow && !onboardingWindow.isDestroyed()) {
+      onboardingWindow.close()
+    }
+    launchMainApp()
+  })
+
+  // Relaunch app (used by "重新运行初始化引导" in settings)
+  ipcMain.on(IPC.APP_RELAUNCH, () => {
+    app.relaunch()
+    app.quit()
+  })
+
   // Companion
   ipcMain.handle(IPC.COMPANION_STATUS, async () => {
     return { running: companion?.isRunning ?? false }
   })
 }
 
-app.whenReady().then(async () => {
-  // Create pet window first
+function launchMainApp(): void {
   petWindow = createPetWindow()
 
-  // Create chat window in dev for testing
-  if (isDev) {
-    mainWindow = createChatWindowInstance()
-  }
-
-  setupIpcHandlers()
   setupTray()
 
-  // Load persisted settings
   const settings = getSettings()
 
-  // Initialize bridge worker with saved config
   bridgeWorker = new BridgeWorker({
     ...DEFAULT_BRIDGE_CONFIG,
     ...settings.openclaw,
   })
   bridgeWorker.setMainWindow(petWindow)
 
-  // Initialize companion scheduler
   companion = new CompanionScheduler(settings.companion)
   companion.setWindow(petWindow)
   if (settings.companion.enabled) {
     companion.start()
   }
 
-  // Don't auto-start bridge without a token configured
   if (settings.openclaw.authToken) {
     void bridgeWorker.start()
+  }
+}
+
+app.whenReady().then(async () => {
+  setupIpcHandlers()
+
+  const settings = getSettings()
+
+  if (!settings.onboarding.completed) {
+    // First run: show onboarding only, no pet window
+    onboardingWindow = createOnboardingWindow()
+    onboardingWindow.on('closed', () => {
+      onboardingWindow = null
+    })
+  } else {
+    launchMainApp()
   }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      petWindow = createPetWindow()
+      launchMainApp()
     }
   })
 })

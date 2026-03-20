@@ -6,15 +6,11 @@ export function AboutSection(): React.ReactElement {
 
   async function handleResetOnboarding(): Promise<void> {
     setResetting(true)
-    try {
-      await window.electronAPI?.invoke('settings:set', {
-        onboarding: { completed: false },
-      })
-      // Reload the window to re-trigger onboarding
-      window.location.reload()
-    } finally {
-      setResetting(false)
-    }
+    await window.electronAPI?.invoke('settings:set', {
+      onboarding: { completed: false },
+    })
+    // Relaunch app so main process shows onboarding window again
+    window.electronAPI?.send('app:relaunch')
   }
 
   return (

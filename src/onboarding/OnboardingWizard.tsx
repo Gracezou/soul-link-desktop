@@ -5,13 +5,9 @@ import { CharacterStep } from './CharacterStep'
 import { CompanionStep } from './CompanionStep'
 import styles from './onboarding.module.css'
 
-interface OnboardingWizardProps {
-  onComplete: () => void
-}
-
 const TOTAL_STEPS = 4
 
-export function OnboardingWizard({ onComplete }: OnboardingWizardProps): React.ReactElement {
+export function OnboardingWizard(): React.ReactElement {
   const [step, setStep] = useState(0)
 
   // Collected settings
@@ -48,7 +44,8 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps): React.R
         completedAt: new Date().toISOString(),
       },
     })
-    onComplete()
+    // Notify main process to close this window and launch pet window
+    window.electronAPI?.send('onboarding:complete')
   }
 
   return (
