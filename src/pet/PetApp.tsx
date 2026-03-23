@@ -2,18 +2,17 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PetCanvas } from './PetCanvas'
 import { Toolbar } from '../toolbar/Toolbar'
-import { useBridge } from '../hooks/useBridge'
 import type { Manifest } from './AnimationEngine'
+import styles from './pet.module.css'
 
 export function PetApp(): React.ReactElement {
-  useBridge()
   const { t } = useTranslation()
   const [hasSprites, setHasSprites] = useState<boolean | null>(null)
 
   useEffect(() => {
     async function checkSprites() {
       try {
-        const resp = await fetch('./res/sprites/baiyuan/manifest.json')
+        const resp = await fetch('res://sprites/baiyuan/manifest.json')
         if (!resp.ok) { setHasSprites(false); return }
         const manifest = await resp.json() as Manifest
         const anyFrames = Object.values(manifest.animations).some(
@@ -37,7 +36,7 @@ export function PetApp(): React.ReactElement {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 200, height: 240 }}>
-      <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <div className={styles.dragArea} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
         {hasSprites === false ? (
           <div style={{
             width: 200,

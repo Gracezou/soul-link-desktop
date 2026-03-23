@@ -27,8 +27,14 @@ export const IPC = {
   WINDOW_TOGGLE_CHAT: 'window:toggle-chat',
   WINDOW_OPEN_SETTINGS: 'window:open-settings',
 
+  // Bridge status query (renderer → main, returns current session state)
+  BRIDGE_GET_SESSION: 'bridge:get-session',
+
   // Onboarding
   BRIDGE_TEST_CONNECTION: 'bridge:test-connection',
   ONBOARDING_COMPLETE: 'onboarding:complete',
   APP_RELAUNCH: 'app:relaunch',
+
+  // Cards
+  CARDS_LIST: 'cards:list',
 } as const

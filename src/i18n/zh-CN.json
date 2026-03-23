@@ -52,6 +52,7 @@
   "chat": {
     "title": "柏源",
     "statusConnected": "● 已连接",
+    "statusConnecting": "● 连接中...",
     "statusDisconnected": "○ 未连接",
     "loading": "柏源正在回复…",
     "inputPlaceholder": "发送消息…",

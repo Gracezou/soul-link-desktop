@@ -13,4 +13,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeAllListeners: (channel: string) => {
     ipcRenderer.removeAllListeners(channel)
   },
+  resBase: process.env.SOUL_LINK_RES_BASE ?? '',
 })

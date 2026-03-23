@@ -12,6 +12,7 @@
   margin: 4px auto 0;
   width: fit-content;
   position: relative;
+  -webkit-app-region: no-drag;
 }
 
 .toolbarItem {

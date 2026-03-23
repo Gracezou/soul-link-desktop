@@ -29,6 +29,7 @@ declare global {
 
 export function useBridge(): void {
   const addAssistantMessage = useChatStore(s => s.addAssistantMessage)
+  const setConnected = useChatStore(s => s.setConnected)
   const setSessionStatus = useChatStore(s => s.setSessionStatus)
   const setAnimationFromEmotion = usePetStore(s => s.setAnimationFromEmotion)
   const addFV = usePetStore(s => s.addFV)
@@ -36,6 +37,12 @@ export function useBridge(): void {
   useEffect(() => {
     const api = window.electronAPI
     if (!api) return
+
+    // Query current session status on mount — handles case where window opens after session is ready
+    void api.invoke('bridge:get-session').then((status) => {
+      const s = status as BridgeSessionStatus
+      if (s?.ready) setSessionStatus(s.ready, s.card)
+    })
 
     api.on('bridge:message', (...args: unknown[]) => {
       const msg = args[0] as BridgeMessage
@@ -53,11 +60,12 @@ export function useBridge(): void {
     })
 
     api.on('bridge:connected', () => {
-      console.log('[useBridge] Connected to gateway')
+      setConnected(true)
     })
 
     api.on('bridge:disconnected', () => {
-      console.log('[useBridge] Disconnected from gateway')
+      setConnected(false)
+      setSessionStatus(false, '')
     })
 
     return () => {
@@ -66,5 +74,5 @@ export function useBridge(): void {
       api.removeAllListeners('bridge:connected')
       api.removeAllListeners('bridge:disconnected')
     }
-  }, [addAssistantMessage, setSessionStatus, setAnimationFromEmotion, addFV])
+  }, [addAssistantMessage, setConnected, setSessionStatus, setAnimationFromEmotion, addFV])
 }

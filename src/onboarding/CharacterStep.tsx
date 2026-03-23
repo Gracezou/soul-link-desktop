@@ -27,33 +27,11 @@ export function CharacterStep({
 
   useEffect(() => {
     async function loadCards() {
-      try {
-        const knownCards = ['baiyuan']
-        const loaded: CharacterInfo[] = []
-
-        for (const id of knownCards) {
-          try {
-            const resp = await fetch(`./res/cards/${id}_card.json`)
-            if (resp.ok) {
-              const json = await resp.json() as {
-                name?: string
-                data?: { name?: string; description?: string }
-              }
-              const name = json.data?.name ?? json.name ?? id
-              const description = (json.data?.description ?? '').slice(0, 50)
-              loaded.push({ id, name, description })
-            }
-          } catch {
-            // skip
-          }
-        }
-
-        setCharacters(loaded)
-        if (loaded.length > 0 && !selectedCard) {
-          onSelect(loaded[0].id)
-        }
-      } catch {
-        // ignore
+      const result = await window.electronAPI?.invoke('cards:list') as CharacterInfo[] | undefined
+      const loaded = result ?? []
+      setCharacters(loaded)
+      if (loaded.length > 0 && !selectedCard) {
+        onSelect(loaded[0].id)
       }
     }
 

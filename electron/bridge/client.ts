@@ -10,6 +10,9 @@ import type {
   ChatEventPayload,
   BridgeMessage,
 } from './types'
+import { createLogger } from '../logger'
+
+const logger = createLogger('Bridge')
 
 export type ClientEvent =
   | 'connected'
@@ -52,7 +55,7 @@ export class OpenClawClient extends EventEmitter {
     })
 
     this.ws.on('open', () => {
-      console.log('[Bridge] WebSocket connected')
+      logger.log('WebSocket connected')
       this.reconnectAttempts = 0
     })
 
@@ -61,24 +64,25 @@ export class OpenClawClient extends EventEmitter {
     })
 
     this.ws.on('close', () => {
-      console.log('[Bridge] WebSocket disconnected')
+      logger.log('WebSocket disconnected')
       this.isConnected = false
       this.emit('disconnected')
       this.scheduleReconnect()
     })
 
     this.ws.on('error', (err: Error) => {
-      console.error('[Bridge] WebSocket error:', err.message)
+      logger.error('WebSocket error:', err.message)
       this.emit('error', { message: err.message })
     })
   }
 
   private handleMessage(raw: string): void {
+    logger.log('← received raw:', raw)
     let msg: GatewayMessage
     try {
       msg = JSON.parse(raw) as GatewayMessage
     } catch {
-      console.warn('[Bridge] Failed to parse message:', raw)
+      logger.warn('Failed to parse message:', raw)
       return
     }
 
@@ -106,7 +110,7 @@ export class OpenClawClient extends EventEmitter {
   }
 
   private handleChallenge(_challenge: ConnectChallengePayload): void {
-    console.log('[Bridge] Received connect.challenge, sending connect request')
+    logger.log('Received connect.challenge, sending connect request')
     const req = {
       type: 'req',
       id: '1',
@@ -192,9 +196,10 @@ export class OpenClawClient extends EventEmitter {
 
   private sendRaw(data: string): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
+      logger.log('→ sending:', data)
       this.ws.send(data)
     } else {
-      console.warn('[Bridge] Attempted to send while not connected')
+      logger.warn('Attempted to send while not connected')
     }
   }
 
@@ -204,7 +209,7 @@ export class OpenClawClient extends EventEmitter {
       this.config.reconnectIntervalMs * Math.pow(2, this.reconnectAttempts),
       30000
     )
-    console.log(`[Bridge] Reconnecting in ${backoff}ms (attempt ${this.reconnectAttempts + 1})`)
+    logger.log(`Reconnecting in ${backoff}ms (attempt ${this.reconnectAttempts + 1})`)
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null
       this.reconnectAttempts++

@@ -7,7 +7,7 @@ import styles from './chat.module.css'
 export function ChatWindow(): React.ReactElement {
   const { t } = useTranslation()
   const [input, setInput] = useState('')
-  const { messages, isLoading, sessionReady, sendMessage } = useChat()
+  const { messages, isLoading, isConnected, sessionReady, sendMessage } = useChat()
 
   async function handleSend(): Promise<void> {
     if (!input.trim()) return
@@ -23,12 +23,19 @@ export function ChatWindow(): React.ReactElement {
     }
   }
 
+  const statusKey = sessionReady
+    ? 'chat.statusConnected'
+    : isConnected
+      ? 'chat.statusConnecting'
+      : 'chat.statusDisconnected'
+  const statusColor = sessionReady ? '#4caf50' : isConnected ? '#ff9800' : '#9e9e9e'
+
   return (
     <div className={styles.chatWindow}>
       <div className={styles.chatHeader}>
         <span className={styles.characterName}>{t('chat.title')}</span>
-        <span className={styles.sessionStatus}>
-          {sessionReady ? t('chat.statusConnected') : t('chat.statusDisconnected')}
+        <span className={styles.sessionStatus} style={{ color: statusColor }}>
+          {t(statusKey)}
         </span>
       </div>
 

@@ -52,6 +52,7 @@
   "chat": {
     "title": "Baiyuan",
     "statusConnected": "● Connected",
+    "statusConnecting": "● Connecting...",
     "statusDisconnected": "○ Disconnected",
     "loading": "Baiyuan is typing…",
     "inputPlaceholder": "Send a message…",

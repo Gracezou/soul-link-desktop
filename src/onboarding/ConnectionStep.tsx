@@ -32,7 +32,7 @@ export function ConnectionStep({
         gatewayWsUrl,
         authToken,
       }) as { success: boolean; error?: string } | undefined
-
+      
       if (result?.success) {
         setTestResult({ success: true, message: t('onboarding.connection.testSuccess') })
       } else {

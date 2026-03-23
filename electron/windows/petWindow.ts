@@ -26,9 +26,11 @@ export function createPetWindow(): BrowserWindow {
   })
 
   if (isDev) {
-    win.loadURL('http://localhost:5173/pet.html')
+    win.loadURL('http://localhost:5173/?page=pet')
   } else {
-    win.loadFile(path.join(__dirname, '../dist/pet.html'))
+    win.loadFile(path.join(__dirname, '../dist/index.html'), {
+      query: { page: 'pet' },
+    })
   }
 
   // Click-through transparent areas by default

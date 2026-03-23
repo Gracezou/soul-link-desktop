@@ -3,6 +3,9 @@ import { OpenClawClient } from './client'
 import type { BridgeConfig } from './config'
 import type { BridgeMessage } from './types'
 import { IPC } from '../ipc'
+import { createLogger } from '../logger'
+
+const logger = createLogger('Worker')
 
 /**
  * Startup sequence (strictly sequential):
@@ -46,12 +49,13 @@ export class BridgeWorker {
   }
 
   async start(): Promise<void> {
-    console.log('[Worker] Starting bridge worker...')
+    const t0 = Date.now()
+    logger.log('Starting bridge worker...')
     this.client.connect()
 
     // Step 1: Wait for handshake
     await this.waitForConnected()
-    console.log('[Worker] Handshake complete')
+    logger.log(`Handshake complete (${Date.now() - t0}ms)`)
 
     // Step 2: List assets to check if card exists
     await this.setupSession()
@@ -68,11 +72,13 @@ export class BridgeWorker {
   }
 
   private async setupSession(): Promise<void> {
+    const t0 = Date.now()
     try {
       // Step 2: List cards
-      console.log('[Worker] Checking for card:', this.config.defaultCard)
+      logger.log('Checking for card:', this.config.defaultCard)
       this.client.sendMessage('/rp list-assets --type card')
       const listResponse = await this.client.waitForFinalResponse()
+      logger.log(`list-assets responded (${Date.now() - t0}ms)`)
 
       const cardExists = listResponse.text
         .toLowerCase()
@@ -80,18 +86,26 @@ export class BridgeWorker {
 
       // Step 3: Import card if not found
       if (!cardExists && this.config.cardImportUrl) {
-        console.log('[Worker] Card not found, importing from:', this.config.cardImportUrl)
+        logger.log('Card not found, importing from:', this.config.cardImportUrl)
+        const tImport = Date.now()
         this.client.sendMessage(`/rp import-card --url ${this.config.cardImportUrl}`)
         const importResponse = await this.client.waitForFinalResponse(60000)
-        if (!importResponse.text.includes('✅')) {
-          console.warn('[Worker] Card import may have failed:', importResponse.text)
+        logger.log(`import-card responded (${Date.now() - tImport}ms):`, importResponse.text)
+        if (importResponse.text.includes('✅')) {
+          logger.log('Card imported successfully')
+        } else if (importResponse.text.toLowerCase().includes('already exists')) {
+          logger.log('Card already exists on server, skipping import')
+        } else {
+          throw new Error(`Card import failed: ${importResponse.text}`)
         }
       }
 
       // Step 4: Start RP session
-      console.log('[Worker] Starting RP session with card:', this.config.defaultCard)
+      logger.log('Starting RP session with card:', this.config.defaultCard)
+      const tStart = Date.now()
       this.client.sendMessage(`/rp start --card ${this.config.defaultCard}`)
       const startResponse = await this.client.waitForFinalResponse(30000)
+      logger.log(`rp start responded (${Date.now() - tStart}ms)`)
 
       if (startResponse.text.includes('❌')) {
         throw new Error(`Failed to start RP session: ${startResponse.text}`)
@@ -100,13 +114,13 @@ export class BridgeWorker {
       // Step 5: Mark ready
       this.sessionReady = true
       this.currentCard = this.config.defaultCard
-      console.log('[Worker] Session ready!')
+      logger.log(`Session ready! Total setup time: ${Date.now() - t0}ms`)
       this.sendToRenderer(IPC.BRIDGE_SESSION_STATUS, {
         ready: true,
         card: this.currentCard,
       })
     } catch (err) {
-      console.error('[Worker] Session setup failed:', err)
+      logger.error('Session setup failed:', err)
       this.sendToRenderer(IPC.BRIDGE_ERROR, {
         message: `Session setup failed: ${(err as Error).message}`,
       })
@@ -115,7 +129,7 @@ export class BridgeWorker {
 
   async sendMessage(message: string): Promise<void> {
     if (!this.sessionReady) {
-      console.warn('[Worker] Session not ready, dropping message')
+      logger.warn('Session not ready, dropping message')
       return
     }
     this.client.sendMessage(message)
@@ -125,13 +139,20 @@ export class BridgeWorker {
     this.client.sendMessage(command)
   }
 
+  getStatus(): { ready: boolean; card: string } {
+    return { ready: this.sessionReady, card: this.currentCard }
+  }
+
   destroy(): void {
     this.client.destroy()
   }
 
   private sendToRenderer(channel: string, data: unknown): void {
-    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-      this.mainWindow.webContents.send(channel, data)
-    }
+    // Broadcast to all open windows so chat window also receives bridge events
+    BrowserWindow.getAllWindows().forEach(win => {
+      if (!win.isDestroyed()) {
+        win.webContents.send(channel, data)
+      }
+    })
   }
 }

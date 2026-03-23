@@ -6,3 +6,8 @@
   flex-direction: column;
   align-items: center;
 }
+
+.dragArea {
+  -webkit-app-region: drag;
+  cursor: grab;
+}

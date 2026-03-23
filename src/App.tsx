@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ChatWindow } from './chat/ChatWindow'
 import { SettingsPanel } from './settings/SettingsPanel'
 import { OnboardingWizard } from './onboarding/OnboardingWizard'
+import { PetApp } from './pet/PetApp'
 import { useBridge } from './hooks/useBridge'
 
 const page = new URLSearchParams(window.location.search).get('page')
@@ -21,6 +22,10 @@ function App(): React.ReactElement {
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  if (page === 'pet') {
+    return <PetApp />
+  }
 
   if (page === 'settings') {
     return <SettingsPanel />

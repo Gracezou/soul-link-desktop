@@ -30,7 +30,7 @@ export function PetCanvas(): React.ReactElement {
     async function init() {
       let manifest: Manifest = PLACEHOLDER_MANIFEST
       try {
-        const resp = await fetch('./res/sprites/baiyuan/manifest.json')
+        const resp = await fetch('res://sprites/baiyuan/manifest.json')
         if (resp.ok) {
           manifest = await resp.json() as Manifest
         }
@@ -38,7 +38,7 @@ export function PetCanvas(): React.ReactElement {
         console.warn('[PetCanvas] Could not load manifest, using placeholder')
       }
 
-      const spriteSheet = new SpriteSheet('./res/sprites/baiyuan/frames')
+      const spriteSheet = new SpriteSheet('res://sprites/baiyuan/frames')
       const engine = new AnimationEngine(manifest, spriteSheet)
       engineRef.current = engine
 

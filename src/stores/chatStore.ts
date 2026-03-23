@@ -13,11 +13,13 @@ export interface ChatMessage {
 interface ChatState {
   messages: ChatMessage[]
   isLoading: boolean
+  isConnected: boolean
   sessionReady: boolean
   currentCard: string
   addUserMessage: (text: string) => void
   addAssistantMessage: (text: string) => void
   setLoading: (loading: boolean) => void
+  setConnected: (connected: boolean) => void
   setSessionStatus: (ready: boolean, card: string) => void
   clearMessages: () => void
 }
@@ -27,6 +29,7 @@ let msgIdCounter = 0
 export const useChatStore = create<ChatState>((set) => ({
   messages: [],
   isLoading: false,
+  isConnected: false,
   sessionReady: false,
   currentCard: '',
 
@@ -54,7 +57,14 @@ export const useChatStore = create<ChatState>((set) => ({
 
   setLoading: (loading) => set({ isLoading: loading }),
 
-  setSessionStatus: (ready, card) => set({ sessionReady: ready, currentCard: card }),
+  setConnected: (connected) => set({ isConnected: connected }),
+
+  setSessionStatus: (ready, card) => set({
+    sessionReady: ready,
+    currentCard: card,
+    // When session drops, WebSocket connection is also gone
+    ...(ready ? {} : { isConnected: false }),
+  }),
 
   clearMessages: () => set({ messages: [] }),
 }))

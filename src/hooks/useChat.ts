@@ -3,6 +3,7 @@ import { useChatStore } from '../stores/chatStore'
 export function useChat() {
   const messages = useChatStore(s => s.messages)
   const isLoading = useChatStore(s => s.isLoading)
+  const isConnected = useChatStore(s => s.isConnected)
   const sessionReady = useChatStore(s => s.sessionReady)
   const addUserMessage = useChatStore(s => s.addUserMessage)
 
@@ -12,5 +13,5 @@ export function useChat() {
     await window.electronAPI.invoke('bridge:send', { message: text })
   }
 
-  return { messages, isLoading, sessionReady, sendMessage }
+  return { messages, isLoading, isConnected, sessionReady, sendMessage }
 }
