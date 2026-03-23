@@ -4,11 +4,10 @@ import { ToolbarItem } from './ToolbarItem'
 import styles from './toolbar.module.css'
 
 interface ToolbarProps {
-  onMouseEnter?: () => void
-  onMouseLeave?: () => void
+  visible?: boolean
 }
 
-export function Toolbar({ onMouseEnter, onMouseLeave }: ToolbarProps): React.ReactElement {
+export function Toolbar({ visible }: ToolbarProps): React.ReactElement {
   const { t } = useTranslation()
 
   const handleToggleChat = useCallback(() => {
@@ -20,11 +19,7 @@ export function Toolbar({ onMouseEnter, onMouseLeave }: ToolbarProps): React.Rea
   }, [])
 
   return (
-    <div
-      className={styles.toolbar}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    >
+    <div className={`${styles.toolbar} ${visible ? styles.visible : ''}`}>
       <ToolbarItem icon="💬" label={t('toolbar.chat')} onClick={handleToggleChat} />
       <ToolbarItem icon="⚙️" label={t('toolbar.settings')} onClick={handleOpenSettings} />
       <ToolbarItem icon="🎭" label={t('toolbar.character')} comingSoon />

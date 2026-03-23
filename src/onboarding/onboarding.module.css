@@ -1,7 +1,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: linear-gradient(135deg, #fdf6f0 0%, #fce4ec 50%, #f3e5f5 100%);
+  background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -15,7 +15,7 @@
   border-radius: 20px;
   padding: 40px 48px;
   width: 480px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 32px var(--shadow);
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -37,7 +37,7 @@
 }
 
 .dot.active {
-  background: #e91e8c;
+  background: var(--primary);
   width: 24px;
   border-radius: 4px;
 }
@@ -46,14 +46,14 @@
 .stepTitle {
   font-size: 22px;
   font-weight: 700;
-  color: #2d1b2e;
+  color: var(--text-primary);
   margin: 0;
   text-align: center;
 }
 
 .stepSubtitle {
   font-size: 14px;
-  color: #7b6b7c;
+  color: var(--text-secondary);
   text-align: center;
   margin: -12px 0 0;
 }
@@ -68,22 +68,22 @@
 .label {
   font-size: 13px;
   font-weight: 600;
-  color: #4a3b4b;
+  color: var(--text-primary);
 }
 
 .input {
   padding: 10px 14px;
-  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  border: 1.5px solid var(--divider);
   border-radius: 10px;
   font-size: 14px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--bg-secondary);
   outline: none;
   transition: border-color 0.2s;
-  color: #2d1b2e;
+  color: var(--text-primary);
 }
 
 .input:focus {
-  border-color: #e91e8c;
+  border-color: var(--primary);
 }
 
 .inputWrapper {
@@ -105,7 +105,7 @@
   border: none;
   cursor: pointer;
   font-size: 16px;
-  color: #7b6b7c;
+  color: var(--text-secondary);
   padding: 0;
   line-height: 1;
 }
@@ -120,9 +120,9 @@
 .testBtn {
   padding: 8px 16px;
   border-radius: 8px;
-  border: 1.5px solid #e91e8c;
+  border: 1.5px solid var(--primary);
   background: transparent;
-  color: #e91e8c;
+  color: var(--primary);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -131,7 +131,7 @@
 }
 
 .testBtn:hover {
-  background: #e91e8c;
+  background: var(--primary);
   color: white;
 }
 
@@ -146,11 +146,11 @@
 }
 
 .testResult.success {
-  color: #2e7d32;
+  color: var(--success);
 }
 
 .testResult.error {
-  color: #c62828;
+  color: var(--error);
 }
 
 /* Language selector */
@@ -163,19 +163,19 @@
   flex: 1;
   padding: 12px;
   border-radius: 12px;
-  border: 1.5px solid rgba(0, 0, 0, 0.1);
-  background: transparent;
+  border: 1.5px solid var(--divider);
+  background: var(--bg-secondary);
   font-size: 14px;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
-  color: #2d1b2e;
+  color: var(--text-primary);
 }
 
 .langBtn.selected {
-  border-color: #e91e8c;
-  background: rgba(233, 30, 140, 0.06);
+  border-color: var(--primary);
+  background: var(--primary-soft);
   font-weight: 600;
-  color: #e91e8c;
+  color: var(--primary);
 }
 
 /* Character cards */
@@ -188,7 +188,7 @@
 }
 
 .characterCard {
-  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  border: 1.5px solid var(--divider);
   border-radius: 12px;
   padding: 12px;
   cursor: pointer;
@@ -198,12 +198,12 @@
 }
 
 .characterCard.selected {
-  border-color: #e91e8c;
-  background: rgba(233, 30, 140, 0.06);
+  border-color: var(--primary);
+  background: var(--primary-soft);
 }
 
 .characterCard:hover {
-  border-color: #e91e8c;
+  border-color: var(--primary);
 }
 
 .characterAvatar {
@@ -218,7 +218,7 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f8bbd0, #ce93d8);
+  background: linear-gradient(135deg, var(--chat-bubble-user), var(--divider));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -229,13 +229,13 @@
 .characterName {
   font-size: 13px;
   font-weight: 600;
-  color: #2d1b2e;
+  color: var(--text-primary);
   margin-bottom: 4px;
 }
 
 .characterDesc {
   font-size: 11px;
-  color: #7b6b7c;
+  color: var(--text-secondary);
   line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -245,7 +245,7 @@
 
 .emptyCards {
   text-align: center;
-  color: #7b6b7c;
+  color: var(--text-secondary);
   font-size: 13px;
   padding: 24px 0;
 }
@@ -260,7 +260,7 @@
 .toggleLabel {
   font-size: 14px;
   font-weight: 600;
-  color: #2d1b2e;
+  color: var(--text-primary);
 }
 
 .toggle {
@@ -285,7 +285,7 @@
 }
 
 .toggle input:checked + .toggleSlider {
-  background: #e91e8c;
+  background: var(--primary);
 }
 
 .toggleSlider::before {
@@ -314,12 +314,12 @@
   display: flex;
   justify-content: space-between;
   font-size: 11px;
-  color: #7b6b7c;
+  color: var(--text-secondary);
 }
 
 .sliderInput {
   width: 100%;
-  accent-color: #e91e8c;
+  accent-color: var(--primary);
 }
 
 .warning {
@@ -341,23 +341,23 @@
 .btnSecondary {
   padding: 10px 20px;
   border-radius: 10px;
-  border: 1.5px solid rgba(0, 0, 0, 0.12);
+  border: 1.5px solid var(--divider);
   background: transparent;
   font-size: 14px;
   cursor: pointer;
-  color: #4a3b4b;
+  color: var(--text-primary);
   transition: background 0.15s;
 }
 
 .btnSecondary:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--primary-soft);
 }
 
 .btnPrimary {
   padding: 10px 24px;
   border-radius: 10px;
   border: none;
-  background: #e91e8c;
+  background: var(--primary);
   color: white;
   font-size: 14px;
   font-weight: 600;

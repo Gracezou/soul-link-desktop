@@ -11,7 +11,8 @@
     "welcome": {
       "title": "Welcome to Soul Link ✨",
       "subtitle": "Your AI desktop companion",
-      "selectLanguage": "Select Language"
+      "selectLanguage": "Select Language",
+      "selectTheme": "Select Theme"
     },
     "connection": {
       "title": "Connect to OpenClaw",
@@ -69,6 +70,7 @@
       "connection": "Connection",
       "character": "Character",
       "companion": "Companion",
+      "appearance": "Appearance",
       "about": "About"
     },
     "connection": {
@@ -98,6 +100,10 @@
         "question": "Question",
         "report": "Report"
       }
+    },
+    "appearance": {
+      "title": "Appearance",
+      "themeLabel": "Theme"
     },
     "about": {
       "title": "About",

@@ -4,15 +4,27 @@
   justify-content: center;
   gap: 4px;
   padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--toolbar-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--toolbar-border);
   margin: 4px auto 0;
   width: fit-content;
   position: relative;
   -webkit-app-region: no-drag;
+
+  /* Hidden by default — fades in on hover */
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .toolbarItem {
@@ -28,11 +40,12 @@
   border: none;
   font-size: 16px;
   position: relative;
+  -webkit-app-region: no-drag;
 }
 
 .toolbarItem:hover {
   transform: scale(1.15);
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--toolbar-hover);
 }
 
 .toolbarItem:active {
@@ -61,5 +74,11 @@
   font-size: 12px;
   white-space: nowrap;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
   z-index: 100;
+}
+
+.toolbarItem:hover .tooltip {
+  opacity: 1;
 }

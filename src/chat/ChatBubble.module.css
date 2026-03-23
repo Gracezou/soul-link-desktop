@@ -2,20 +2,20 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(74, 144, 226, 0.85);
+  background: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.2s, background 0.2s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s, opacity 0.2s;
+  box-shadow: 0 2px 8px var(--shadow);
   user-select: none;
 }
 
 .bubble:hover,
 .hovered {
   transform: scale(1.15);
-  background: rgba(53, 122, 189, 0.95);
+  opacity: 0.85;
 }
 
 .icon {

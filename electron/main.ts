@@ -407,7 +407,23 @@ function launchMainApp(): void {
     return
   }
 
-  petWindow = createPetWindow()
+  const savedPet = getSettings().pet
+  const savedX = savedPet.positionX >= 0 ? savedPet.positionX : undefined
+  const savedY = savedPet.positionY >= 0 ? savedPet.positionY : undefined
+  petWindow = createPetWindow(savedX, savedY)
+
+  // Persist window position after each move (debounced)
+  let savePositionTimer: ReturnType<typeof setTimeout> | null = null
+  petWindow.on('moved', () => {
+    if (savePositionTimer) clearTimeout(savePositionTimer)
+    savePositionTimer = setTimeout(() => {
+      if (!petWindow || petWindow.isDestroyed()) return
+      const [x, y] = petWindow.getPosition()
+      const currentPet = getSettings().pet
+      updateSettings({ pet: { ...currentPet, positionX: x, positionY: y } })
+      mainLogger.log(`Pet position saved: (${x}, ${y})`)
+    }, 500)
+  })
 
   setupTray()
 

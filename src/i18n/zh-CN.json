@@ -11,7 +11,8 @@
     "welcome": {
       "title": "欢迎来到 Soul Link ✨",
       "subtitle": "你的 AI 桌面情感伴侣",
-      "selectLanguage": "选择语言"
+      "selectLanguage": "选择语言",
+      "selectTheme": "选择主题"
     },
     "connection": {
       "title": "连接 OpenClaw 网关",
@@ -69,6 +70,7 @@
       "connection": "连接",
       "character": "角色",
       "companion": "陪伴",
+      "appearance": "外观",
       "about": "关于"
     },
     "connection": {
@@ -98,6 +100,10 @@
         "question": "提问",
         "report": "汇报"
       }
+    },
+    "appearance": {
+      "title": "外观",
+      "themeLabel": "主题风格"
     },
     "about": {
       "title": "关于",

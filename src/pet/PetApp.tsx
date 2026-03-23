@@ -8,6 +8,7 @@ import styles from './pet.module.css'
 export function PetApp(): React.ReactElement {
   const { t } = useTranslation()
   const [hasSprites, setHasSprites] = useState<boolean | null>(null)
+  const [hovered, setHovered] = useState(false)
 
   useEffect(() => {
     async function checkSprites() {
@@ -27,16 +28,22 @@ export function PetApp(): React.ReactElement {
   }, [])
 
   const handleMouseEnter = useCallback(() => {
+    setHovered(true)
     window.electronAPI?.send('pet:mouse-enter')
   }, [])
 
   const handleMouseLeave = useCallback(() => {
+    setHovered(false)
     window.electronAPI?.send('pet:mouse-leave')
   }, [])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 200, height: 240 }}>
-      <div className={styles.dragArea} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+    <div
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 200, height: 240 }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div className={styles.dragArea}>
         {hasSprites === false ? (
           <div style={{
             width: 200,
@@ -60,7 +67,7 @@ export function PetApp(): React.ReactElement {
           <PetCanvas />
         )}
       </div>
-      <Toolbar onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} />
+      <Toolbar visible={hovered} />
     </div>
   )
 }

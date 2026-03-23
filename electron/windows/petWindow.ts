@@ -3,20 +3,21 @@ import path from 'path'
 
 const isDev = !app.isPackaged
 
-export function createPetWindow(): BrowserWindow {
+export function createPetWindow(savedX?: number, savedY?: number): BrowserWindow {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize
 
   const win = new BrowserWindow({
     width: 200,
     height: 240,
-    x: width - 220,
-    y: height - 220,
+    x: savedX ?? width - 220,
+    y: savedY ?? height - 220,
     transparent: true,
     frame: false,
     alwaysOnTop: true,
     skipTaskbar: true,
     hasShadow: false,
     resizable: false,
+    movable: true,
     focusable: false,
     webPreferences: {
       preload: path.join(__dirname, '../preload.js'),

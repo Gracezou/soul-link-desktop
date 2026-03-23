@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { WelcomeStep } from './WelcomeStep'
+import { applyTheme } from '../themes'
 import { ConnectionStep } from './ConnectionStep'
 import { CharacterStep } from './CharacterStep'
 import { CompanionStep } from './CompanionStep'
@@ -11,6 +12,10 @@ export function OnboardingWizard(): React.ReactElement {
   const [step, setStep] = useState(0)
 
   const [language, setLanguage] = useState('zh-CN')
+  const [theme, setTheme] = useState('warm-pink')
+
+  // Apply default theme on mount
+  useEffect(() => { applyTheme('warm-pink') }, [])
   const [gatewayWsUrl, setGatewayWsUrl] = useState('ws://localhost:18789/')
   const [authToken, setAuthToken] = useState('')
   const [selectedCard, setSelectedCard] = useState('baiyuan')
@@ -25,7 +30,7 @@ export function OnboardingWizard(): React.ReactElement {
       openclaw: { gatewayWsUrl, authToken, defaultCard: selectedCard },
       companion: { enabled: companionEnabled, idleMinutes },
       pet: { character: selectedCard },
-      ui: { language },
+      ui: { language, theme },
       onboarding: { completed: true, completedAt: new Date().toISOString() },
     })
     window.electronAPI?.send('onboarding:complete')
@@ -44,6 +49,8 @@ export function OnboardingWizard(): React.ReactElement {
           <WelcomeStep
             language={language}
             onLanguageChange={setLanguage}
+            theme={theme}
+            onThemeChange={setTheme}
             onNext={next}
           />
         )}

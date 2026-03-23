@@ -5,6 +5,7 @@ import { SettingsPanel } from './settings/SettingsPanel'
 import { OnboardingWizard } from './onboarding/OnboardingWizard'
 import { PetApp } from './pet/PetApp'
 import { useBridge } from './hooks/useBridge'
+import { applyTheme } from './themes'
 
 const page = new URLSearchParams(window.location.search).get('page')
 
@@ -12,13 +13,12 @@ function App(): React.ReactElement {
   useBridge()
   const { t, i18n } = useTranslation()
 
-  // Sync language from persisted settings on startup
+  // Sync language and theme from persisted settings on startup
   useEffect(() => {
     window.electronAPI?.invoke('settings:get').then((s) => {
-      const lang = (s as { ui?: { language?: string } } | undefined)?.ui?.language
-      if (lang && lang !== i18n.language) {
-        void i18n.changeLanguage(lang)
-      }
+      const ui = (s as { ui?: { language?: string; theme?: string } } | undefined)?.ui
+      if (ui?.language && ui.language !== i18n.language) void i18n.changeLanguage(ui.language)
+      applyTheme(ui?.theme ?? 'warm-pink')
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

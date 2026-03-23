@@ -4,9 +4,10 @@ import { ConnectionSection } from './ConnectionSection'
 import { CharacterSection } from './CharacterSection'
 import { CompanionSection } from './CompanionSection'
 import { AboutSection } from './AboutSection'
+import { AppearanceSection } from './AppearanceSection'
 import styles from './settings.module.css'
 
-type Tab = 'connection' | 'character' | 'companion' | 'about'
+type Tab = 'connection' | 'character' | 'companion' | 'appearance' | 'about'
 
 export function SettingsPanel(): React.ReactElement {
   const { t } = useTranslation()
@@ -23,6 +24,7 @@ export function SettingsPanel(): React.ReactElement {
     { id: 'connection', label: t('settings.tabs.connection') },
     { id: 'character', label: t('settings.tabs.character') },
     { id: 'companion', label: t('settings.tabs.companion') },
+    { id: 'appearance', label: t('settings.tabs.appearance') },
     { id: 'about', label: t('settings.tabs.about') },
   ]
 
@@ -54,6 +56,7 @@ export function SettingsPanel(): React.ReactElement {
         {activeTab === 'connection' && <ConnectionSection settings={settings} />}
         {activeTab === 'character' && <CharacterSection settings={settings} />}
         {activeTab === 'companion' && <CompanionSection settings={settings} />}
+        {activeTab === 'appearance' && <AppearanceSection settings={settings} />}
         {activeTab === 'about' && <AboutSection />}
       </div>
     </div>

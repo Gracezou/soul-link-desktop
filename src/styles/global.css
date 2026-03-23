@@ -1,3 +1,36 @@
+/* Default theme variables (warm-pink) — overwritten by applyTheme() at runtime */
+:root {
+  --primary: #E91E8C;
+  --primary-light: #F472B6;
+  --primary-soft: rgba(233, 30, 140, 0.08);
+
+  --bg-primary: #FFF5F9;
+  --bg-secondary: #FFFFFF;
+  --bg-gradient-start: #FFF0F5;
+  --bg-gradient-end: #FFFFFF;
+
+  --text-primary: #4A1942;
+  --text-secondary: #9B6B8E;
+  --text-muted: #C9A0B8;
+
+  --chat-bubble-user: #FCE4EC;
+  --chat-bubble-assistant: #FFFFFF;
+  --chat-bubble-border: #F8BBD0;
+  --chat-input-bg: #FDF2F8;
+  --chat-header-bg: #FDF2F8;
+
+  --toolbar-bg: rgba(255, 240, 245, 0.85);
+  --toolbar-border: rgba(233, 30, 140, 0.15);
+  --toolbar-hover: rgba(233, 30, 140, 0.1);
+
+  --success: #4CAF50;
+  --warning: #FF9800;
+  --error: #F44336;
+
+  --divider: #F8BBD0;
+  --shadow: rgba(233, 30, 140, 0.08);
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -6,6 +39,6 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #1a1a2e;
-  color: #eee;
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }

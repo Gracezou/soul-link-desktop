@@ -23,6 +23,7 @@ interface SoulLinkSettings {
   }
   ui: {
     language: string
+    theme: string
   }
   onboarding: {
     completed: boolean
@@ -47,12 +48,13 @@ const defaults: SoulLinkSettings = {
   },
   pet: {
     character: 'baiyuan',
-    positionX: 100,
-    positionY: 100,
+    positionX: -1,
+    positionY: -1,
     scale: 1.0,
   },
   ui: {
     language: 'zh-CN',
+    theme: 'warm-pink',
   },
   onboarding: {
     completed: false,
