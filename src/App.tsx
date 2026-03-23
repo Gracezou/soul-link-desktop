@@ -15,11 +15,24 @@ function App(): React.ReactElement {
 
   // Sync language and theme from persisted settings on startup
   useEffect(() => {
-    window.electronAPI?.invoke('settings:get').then((s) => {
+    const api = window.electronAPI
+    if (!api) return
+
+    api.invoke('settings:get').then((s) => {
       const ui = (s as { ui?: { language?: string; theme?: string } } | undefined)?.ui
       if (ui?.language && ui.language !== i18n.language) void i18n.changeLanguage(ui.language)
       applyTheme(ui?.theme ?? 'warm-pink')
     })
+
+    // Re-apply theme whenever any window calls settings:set
+    api.on('settings:changed', (...args: unknown[]) => {
+      const theme = (args[0] as { ui?: { theme?: string } } | undefined)?.ui?.theme
+      if (theme) applyTheme(theme)
+    })
+
+    return () => {
+      api.removeAllListeners('settings:changed')
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
