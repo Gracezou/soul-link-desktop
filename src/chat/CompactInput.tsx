@@ -6,10 +6,9 @@ import styles from './chat.module.css'
 interface CompactInputProps {
   visible: boolean
   onSend: (message: string) => void
-  onOpenHistory: () => void
 }
 
-export function CompactInput({ visible, onSend, onOpenHistory }: CompactInputProps): React.ReactElement {
+export function CompactInput({ visible, onSend }: CompactInputProps): React.ReactElement {
   const { t } = useTranslation()
   const [text, setText] = useState('')
 
@@ -43,9 +42,6 @@ export function CompactInput({ visible, onSend, onOpenHistory }: CompactInputPro
         </button>
       </div>
       <PresetButtons onSend={onSend} />
-      <button className={styles.historyLink} onClick={onOpenHistory}>
-        {t('chat.viewHistory')}
-      </button>
     </div>
   )
 }

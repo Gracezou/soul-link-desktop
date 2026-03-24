@@ -268,31 +268,29 @@ function setupIpcHandlers(): void {
     BrowserWindow.fromWebContents(event.sender)?.close()
   })
 
-  // Pet drag — move the pet window
-  let dragStartScreenX = 0
-  let dragStartScreenY = 0
-  let winStartX = 0
-  let winStartY = 0
-
-  ipcMain.on('pet:drag-start', (_event, data: { x: number; y: number }) => {
-    const bounds = petWindow?.getBounds()
-    if (!bounds) return
-    dragStartScreenX = (data as { x: number; y: number }).x
-    dragStartScreenY = (data as { x: number; y: number }).y
-    winStartX = bounds.x
-    winStartY = bounds.y
+  // Pet window drag (delta-based)
+  ipcMain.on('pet:move-window', (_event, data: { deltaX: number; deltaY: number }) => {
+    if (!petWindow || petWindow.isDestroyed()) return
+    const [x, y] = petWindow.getPosition()
+    petWindow.setPosition(x + data.deltaX, y + data.deltaY)
   })
 
-  ipcMain.on('pet:drag-move', (_event, data: { x: number; y: number }) => {
-    if (!petWindow) return
-    const { x, y } = data as { x: number; y: number }
-    const dx = x - dragStartScreenX
-    const dy = y - dragStartScreenY
-    petWindow.setPosition(winStartX + dx, winStartY + dy)
+  let savePositionTimeout: ReturnType<typeof setTimeout> | null = null
+  ipcMain.on('pet:save-position', () => {
+    if (!petWindow || petWindow.isDestroyed()) return
+    if (savePositionTimeout) clearTimeout(savePositionTimeout)
+    savePositionTimeout = setTimeout(() => {
+      if (!petWindow || petWindow.isDestroyed()) return
+      const [x, y] = petWindow.getPosition()
+      const currentPet = getSettings().pet
+      updateSettings({ pet: { ...currentPet, positionX: x, positionY: y } })
+    }, 500)
   })
 
-  ipcMain.on('pet:drag-end', () => {
-    // Window position already updated during drag
+  ipcMain.on('pet:resize-window', (_event, data: { height: number }) => {
+    if (!petWindow || petWindow.isDestroyed()) return
+    const [width] = petWindow.getSize()
+    petWindow.setSize(width, data.height, true)
   })
 
   // Onboarding complete: close onboarding window, launch main app

@@ -45,6 +45,7 @@
   },
   "toolbar": {
     "chat": "对话",
+    "history": "聊天记录",
     "settings": "设置",
     "character": "切换角色",
     "photo": "生成图片",

@@ -19,6 +19,10 @@ export function Toolbar({ visible, onChatClick }: ToolbarProps): React.ReactElem
     }
   }, [onChatClick])
 
+  const handleOpenHistory = useCallback(() => {
+    void window.electronAPI?.invoke('window:open-history')
+  }, [])
+
   const handleOpenSettings = useCallback(() => {
     window.electronAPI?.send('window:open-settings')
   }, [])
@@ -26,6 +30,7 @@ export function Toolbar({ visible, onChatClick }: ToolbarProps): React.ReactElem
   return (
     <div className={`${styles.toolbar} ${visible ? styles.visible : ''}`}>
       <ToolbarItem icon="💬" label={t('toolbar.chat')} onClick={handleToggleChat} />
+      <ToolbarItem icon="📜" label={t('toolbar.history')} onClick={handleOpenHistory} />
       <ToolbarItem icon="⚙️" label={t('toolbar.settings')} onClick={handleOpenSettings} />
       <ToolbarItem icon="🎭" label={t('toolbar.character')} comingSoon />
       <ToolbarItem icon="📷" label={t('toolbar.photo')} comingSoon />

@@ -45,6 +45,7 @@
   },
   "toolbar": {
     "chat": "Chat",
+    "history": "Chat History",
     "settings": "Settings",
     "character": "Switch Character",
     "photo": "Generate Image",

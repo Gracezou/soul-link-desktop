@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PetCanvas } from './PetCanvas'
 import { Toolbar } from '../toolbar/Toolbar'
@@ -7,12 +7,21 @@ import { CompactInput } from '../chat/CompactInput'
 import type { Manifest } from './AnimationEngine'
 import styles from './pet.module.css'
 
+const SPRITE_HEIGHT = 256
+const TOOLBAR_HEIGHT = 44
+const PADDING = 16
+const INPUT_PANEL_HEIGHT = 110
+const BASE_HEIGHT = SPRITE_HEIGHT + TOOLBAR_HEIGHT + PADDING
+const EXPANDED_HEIGHT = BASE_HEIGHT + INPUT_PANEL_HEIGHT
+
 export function PetApp(): React.ReactElement {
   const { t } = useTranslation()
   const [hasSprites, setHasSprites] = useState<boolean | null>(null)
   const [hovered, setHovered] = useState(false)
   const [inputVisible, setInputVisible] = useState(false)
   const [currentMessage, setCurrentMessage] = useState<string | null>(null)
+  const [dragging, setDragging] = useState(false)
+  const dragStart = useRef({ x: 0, y: 0 })
 
   useEffect(() => {
     async function checkSprites() {
@@ -42,6 +51,33 @@ export function PetApp(): React.ReactElement {
     return () => { off() }
   }, [])
 
+  // JS-based drag: track delta and send IPC to move window
+  useEffect(() => {
+    if (!dragging) return
+    const onMouseMove = (e: MouseEvent) => {
+      const deltaX = e.screenX - dragStart.current.x
+      const deltaY = e.screenY - dragStart.current.y
+      dragStart.current = { x: e.screenX, y: e.screenY }
+      window.electronAPI?.send('pet:move-window', { deltaX, deltaY })
+    }
+    const onMouseUp = () => {
+      setDragging(false)
+      window.electronAPI?.send('pet:save-position')
+    }
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+    }
+  }, [dragging])
+
+  const onPetMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button !== 0) return
+    setDragging(true)
+    dragStart.current = { x: e.screenX, y: e.screenY }
+  }, [])
+
   const handleMouseEnter = useCallback(() => {
     setHovered(true)
     window.electronAPI?.send('pet:mouse-enter')
@@ -52,21 +88,31 @@ export function PetApp(): React.ReactElement {
     window.electronAPI?.send('pet:mouse-leave')
   }, [])
 
+  const handleChatToggle = useCallback(() => {
+    setInputVisible(prev => {
+      const next = !prev
+      window.electronAPI?.send('pet:resize-window', {
+        height: next ? EXPANDED_HEIGHT : BASE_HEIGHT,
+      })
+      return next
+    })
+  }, [])
+
   const handleSend = useCallback((message: string) => {
     void window.electronAPI?.invoke('bridge:send', { message })
   }, [])
 
-  const handleOpenHistory = useCallback(() => {
-    void window.electronAPI?.invoke('window:open-history')
-  }, [])
-
   return (
     <div
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 200 }}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 200, overflow: 'hidden' }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className={styles.dragArea} style={{ position: 'relative' }}>
+      <div
+        className={styles.dragArea}
+        style={{ position: 'relative', cursor: dragging ? 'grabbing' : 'grab' }}
+        onMouseDown={onPetMouseDown}
+      >
         <ChatBubbleFeedback
           message={currentMessage}
           onDismiss={() => setCurrentMessage(null)}
@@ -74,7 +120,7 @@ export function PetApp(): React.ReactElement {
         {hasSprites === false ? (
           <div style={{
             width: 200,
-            height: 200,
+            height: SPRITE_HEIGHT,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -94,12 +140,8 @@ export function PetApp(): React.ReactElement {
           <PetCanvas />
         )}
       </div>
-      <Toolbar visible={hovered} onChatClick={() => setInputVisible(prev => !prev)} />
-      <CompactInput
-        visible={inputVisible}
-        onSend={handleSend}
-        onOpenHistory={handleOpenHistory}
-      />
+      <Toolbar visible={hovered} onChatClick={handleChatToggle} />
+      <CompactInput visible={inputVisible} onSend={handleSend} />
     </div>
   )
 }
