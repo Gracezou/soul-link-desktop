@@ -21,7 +21,7 @@ declare global {
     electronAPI: {
       send: (channel: string, data?: unknown) => void
       invoke: (channel: string, data?: unknown) => Promise<unknown>
-      on: (channel: string, callback: (...args: unknown[]) => void) => void
+      on: (channel: string, callback: (...args: unknown[]) => void) => () => void
       removeAllListeners: (channel: string) => void
     }
   }
@@ -44,7 +44,7 @@ export function useBridge(): void {
       if (s?.ready) setSessionStatus(s.ready, s.card)
     })
 
-    api.on('bridge:message', (...args: unknown[]) => {
+    const offMessage = api.on('bridge:message', (...args: unknown[]) => {
       const msg = args[0] as BridgeMessage
       addAssistantMessage(msg.text)
       // Map response emotions to pet animation
@@ -54,25 +54,25 @@ export function useBridge(): void {
       addFV(cmd.fvDelta)
     })
 
-    api.on('bridge:session', (...args: unknown[]) => {
+    const offSession = api.on('bridge:session', (...args: unknown[]) => {
       const status = args[0] as BridgeSessionStatus
       setSessionStatus(status.ready, status.card)
     })
 
-    api.on('bridge:connected', () => {
+    const offConnected = api.on('bridge:connected', () => {
       setConnected(true)
     })
 
-    api.on('bridge:disconnected', () => {
+    const offDisconnected = api.on('bridge:disconnected', () => {
       setConnected(false)
       setSessionStatus(false, '')
     })
 
     return () => {
-      api.removeAllListeners('bridge:message')
-      api.removeAllListeners('bridge:session')
-      api.removeAllListeners('bridge:connected')
-      api.removeAllListeners('bridge:disconnected')
+      offMessage()
+      offSession()
+      offConnected()
+      offDisconnected()
     }
   }, [addAssistantMessage, setConnected, setSessionStatus, setAnimationFromEmotion, addFV])
 }

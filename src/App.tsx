@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChatWindow } from './chat/ChatWindow'
+import { ChatHistory } from './chat/ChatHistory'
 import { SettingsPanel } from './settings/SettingsPanel'
 import { OnboardingWizard } from './onboarding/OnboardingWizard'
 import { PetApp } from './pet/PetApp'
@@ -9,11 +10,12 @@ import { applyTheme } from './themes'
 
 const page = new URLSearchParams(window.location.search).get('page')
 
-function App(): React.ReactElement {
+// BridgedApp calls useBridge and handles all pages that need the bridge connection.
+// ChatHistory runs in a separate window and does NOT need useBridge.
+function BridgedApp(): React.ReactElement {
   useBridge()
   const { t, i18n } = useTranslation()
 
-  // Sync language and theme from persisted settings on startup
   useEffect(() => {
     const api = window.electronAPI
     if (!api) return
@@ -24,29 +26,18 @@ function App(): React.ReactElement {
       applyTheme(ui?.theme ?? 'warm-pink')
     })
 
-    // Re-apply theme whenever any window calls settings:set
-    api.on('settings:changed', (...args: unknown[]) => {
+    const off = api.on('settings:changed', (...args: unknown[]) => {
       const theme = (args[0] as { ui?: { theme?: string } } | undefined)?.ui?.theme
       if (theme) applyTheme(theme)
     })
 
-    return () => {
-      api.removeAllListeners('settings:changed')
-    }
+    return () => { off() }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  if (page === 'pet') {
-    return <PetApp />
-  }
-
-  if (page === 'settings') {
-    return <SettingsPanel />
-  }
-
-  if (page === 'onboarding') {
-    return <OnboardingWizard />
-  }
+  if (page === 'pet') return <PetApp />
+  if (page === 'settings') return <SettingsPanel />
+  if (page === 'onboarding') return <OnboardingWizard />
 
   return (
     <div style={{ height: '100vh', overflow: 'hidden', position: 'relative' }}>
@@ -72,6 +63,11 @@ function App(): React.ReactElement {
       <ChatWindow />
     </div>
   )
+}
+
+function App(): React.ReactElement {
+  if (page === 'history') return <ChatHistory />
+  return <BridgedApp />
 }
 
 export default App

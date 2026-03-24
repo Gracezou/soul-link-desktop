@@ -39,6 +39,20 @@ process.env.SOUL_LINK_RES_BASE = app.isPackaged
   ? path.join(process.resourcesPath, 'res')
   : path.join(__dirname, '../res')
 
+let historyWindow: BrowserWindow | null = null
+const MAX_HISTORY = 500
+interface HistoryMessage { id: string; role: 'user' | 'assistant'; text: string; timestamp: number }
+const messageHistory: HistoryMessage[] = []
+let histMsgCounter = 0
+function pushHistory(msg: Omit<HistoryMessage, 'id'>): HistoryMessage {
+  const full: HistoryMessage = { id: `h-${++histMsgCounter}`, ...msg }
+  messageHistory.push(full)
+  if (messageHistory.length > MAX_HISTORY) messageHistory.splice(0, messageHistory.length - MAX_HISTORY)
+  if (historyWindow && !historyWindow.isDestroyed()) {
+    historyWindow.webContents.send(IPC.CHAT_ON_MESSAGE, full)
+  }
+  return full
+}
 let mainWindow: BrowserWindow | null = null   // chat window
 let petWindow: BrowserWindow | null = null
 let settingsWindow: BrowserWindow | null = null
@@ -100,6 +114,7 @@ function setupTray(): void {
 function setupIpcHandlers(): void {
   // Bridge
   ipcMain.handle(IPC.BRIDGE_SEND, async (_event, data: { message: string }) => {
+    pushHistory({ role: 'user', text: data.message, timestamp: Date.now() })
     await bridgeWorker?.sendMessage(data.message)
   })
 
@@ -375,6 +390,41 @@ function setupIpcHandlers(): void {
     mainLogger.log(`cards:list → cardsDir=${cardsDir}, found ${cards.length} card(s)`)
     return cards
   })
+
+  // Chat history: return all cached messages
+  ipcMain.handle(IPC.CHAT_GET_HISTORY, () => {
+    return messageHistory
+  })
+
+  // Open or focus the history window
+  ipcMain.handle(IPC.WINDOW_OPEN_HISTORY, () => {
+    if (historyWindow && !historyWindow.isDestroyed()) {
+      historyWindow.focus()
+      return
+    }
+    historyWindow = new BrowserWindow({
+      width: 400,
+      height: 600,
+      minWidth: 350,
+      minHeight: 400,
+      frame: false,
+      transparent: false,
+      resizable: true,
+      webPreferences: {
+        preload: path.join(__dirname, '../preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false,
+      },
+    })
+    if (!app.isPackaged) {
+      void historyWindow.loadURL('http://localhost:5173/?page=history')
+    } else {
+      void historyWindow.loadFile(path.join(__dirname, '../dist/index.html'), { query: { page: 'history' } })
+    }
+    historyWindow.on('closed', () => {
+      historyWindow = null
+    })
+  })
 }
 
 /**
@@ -434,6 +484,9 @@ function launchMainApp(): void {
     ...settings.openclaw,
   })
   bridgeWorker.setMainWindow(petWindow)
+  bridgeWorker.onMessage = (msg) => {
+    pushHistory({ role: 'assistant', text: msg.text, timestamp: Date.now() })
+  }
 
   companion = new CompanionScheduler(settings.companion)
   companion.setWindow(petWindow)

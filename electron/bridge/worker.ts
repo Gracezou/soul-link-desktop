@@ -19,6 +19,7 @@ export class BridgeWorker {
   private client: OpenClawClient
   private config: BridgeConfig
   private mainWindow: BrowserWindow | null = null
+  public onMessage: ((msg: BridgeMessage) => void) | null = null
   private sessionReady = false
   private currentCard = ''
 
@@ -36,6 +37,7 @@ export class BridgeWorker {
     })
 
     this.client.on('message', (msg: BridgeMessage) => {
+      if (this.onMessage) this.onMessage(msg)
       this.sendToRenderer(IPC.BRIDGE_MESSAGE, msg)
     })
 

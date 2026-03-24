@@ -5,14 +5,19 @@ import styles from './toolbar.module.css'
 
 interface ToolbarProps {
   visible?: boolean
+  onChatClick?: () => void
 }
 
-export function Toolbar({ visible }: ToolbarProps): React.ReactElement {
+export function Toolbar({ visible, onChatClick }: ToolbarProps): React.ReactElement {
   const { t } = useTranslation()
 
   const handleToggleChat = useCallback(() => {
-    window.electronAPI?.send('window:toggle-chat')
-  }, [])
+    if (onChatClick) {
+      onChatClick()
+    } else {
+      window.electronAPI?.send('window:toggle-chat')
+    }
+  }, [onChatClick])
 
   const handleOpenSettings = useCallback(() => {
     window.electronAPI?.send('window:open-settings')

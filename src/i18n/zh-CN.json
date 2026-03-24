@@ -59,7 +59,15 @@
     "inputPlaceholder": "发送消息…",
     "inputPlaceholderWaiting": "等待连接…",
     "send": "发送",
-    "openChat": "打开聊天"
+    "openChat": "打开聊天",
+    "presets": {
+      "greeting": "早上好 👋",
+      "miss": "想你了 ❤",
+      "whatsDoing": "在忙什么？"
+    },
+    "viewHistory": "查看聊天记录",
+    "historyTitle": "聊天记录",
+    "emptyHistory": "还没有聊天记录，打个招呼吧~"
   },
   "pet": {
     "placeholder": "等待角色立绘..."

@@ -59,7 +59,15 @@
     "inputPlaceholder": "Send a message…",
     "inputPlaceholderWaiting": "Waiting for connection…",
     "send": "Send",
-    "openChat": "Open Chat"
+    "openChat": "Open Chat",
+    "presets": {
+      "greeting": "Good morning 👋",
+      "miss": "Miss you ❤",
+      "whatsDoing": "What are you up to?"
+    },
+    "viewHistory": "View chat history",
+    "historyTitle": "Chat History",
+    "emptyHistory": "No messages yet. Say hi~"
   },
   "pet": {
     "placeholder": "Waiting for sprites..."

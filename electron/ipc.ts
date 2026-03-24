@@ -37,4 +37,8 @@ export const IPC = {
 
   // Cards
   CARDS_LIST: 'cards:list',
+  // Chat history window
+  WINDOW_OPEN_HISTORY: 'window:open-history',
+  CHAT_GET_HISTORY: 'chat:get-history',
+  CHAT_ON_MESSAGE: 'chat:on-message',
 } as const

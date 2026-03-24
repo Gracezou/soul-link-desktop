@@ -8,7 +8,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return ipcRenderer.invoke(channel, data)
   },
   on: (channel: string, callback: (...args: unknown[]) => void) => {
-    ipcRenderer.on(channel, (_event, ...args) => callback(...args))
+    const wrapper = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => callback(...args)
+    ipcRenderer.on(channel, wrapper)
+    return () => ipcRenderer.removeListener(channel, wrapper)
   },
   removeAllListeners: (channel: string) => {
     ipcRenderer.removeAllListeners(channel)
