@@ -85,3 +85,53 @@ User input → ChatWindow → invoke('bridge:send')
 
 ## Full Architecture Reference
 `docs/SOUL_LINK_MIGRATION.md` — comprehensive spec (746 lines) covering gateway protocol, IPC design, animation manifest format, settings schema, and the original 7-phase implementation plan.
+
+---
+
+## Subagent Orchestration
+
+This project has 6 specialized subagents defined in `.claude/agents/`. When implementing features, refactoring, or executing design documents, **you MUST delegate to the appropriate subagents** instead of doing all the work in the main conversation.
+
+### Routing Rules
+
+| Trigger | Subagent | Purpose |
+|---------|----------|---------|
+| Design doc / PRD / feature spec received | `pm-planner` | Analyze requirements, break down tasks, define acceptance criteria |
+| Module boundaries, IPC protocol, new window/process design | `architect` | Evaluate architecture impact, define interface contracts |
+| Changes under `electron/` | `electron-dev` | Main process, IPC handlers, window management, preload scripts |
+| Changes under `src/` | `frontend-dev` | React components, hooks, stores, styles |
+| After code changes are complete | `code-reviewer` | Review code quality, security, cross-platform compatibility |
+| Build/test verification needed | `test-build` | Run tsc, lint, jest, electron-builder |
+
+### Execution Pipeline
+
+For multi-module feature work (e.g. design documents), dispatch subagents in this order:
+
+```
+1. pm-planner    → Requirement analysis, task breakdown
+2. architect     → Architecture review, interface design (if needed)
+3. electron-dev  → Main process changes (via codex exec)
+4. frontend-dev  → Renderer process changes (via codex exec)
+5. code-reviewer → Review all changes
+6. test-build    → Compile check, test run
+```
+
+Skip any step that does not apply (e.g. pure frontend work skips `electron-dev`).
+
+### Parallelism
+
+- `electron-dev` and `frontend-dev` MAY run in parallel once interface contracts are finalized by `architect`
+- `code-reviewer` MUST wait until all code changes are complete
+
+### Single-Module Shortcuts
+
+When changes touch only one directory:
+- `electron/` only → dispatch `electron-dev`, then `code-reviewer`
+- `src/` only → dispatch `frontend-dev`, then `code-reviewer`
+- Scope unclear → dispatch `architect` first to assess impact
+
+### Code Modification Policy
+
+- `electron-dev` and `frontend-dev` **MUST use `codex exec` to modify code** — direct file writes are forbidden
+- `pm-planner`, `architect`, `code-reviewer` are read-only — they do NOT modify source files
+- `test-build` only runs check commands — it does NOT modify source files
