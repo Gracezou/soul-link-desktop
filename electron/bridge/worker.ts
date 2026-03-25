@@ -37,6 +37,7 @@ export class BridgeWorker {
     })
 
     this.client.on('message', (msg: BridgeMessage) => {
+      logger.log(`← AI [${msg.runId}] ${msg.text.length} chars: "${msg.text.slice(0, 60)}${msg.text.length > 60 ? '...' : ''}"`)
       if (this.onMessage) this.onMessage(msg)
       this.sendToRenderer(IPC.BRIDGE_MESSAGE, msg)
     })
@@ -131,9 +132,10 @@ export class BridgeWorker {
 
   async sendMessage(message: string): Promise<void> {
     if (!this.sessionReady) {
-      logger.warn('Session not ready, dropping message')
+      logger.warn('Session not ready, dropping message:', message.slice(0, 60))
       return
     }
+    logger.log(`→ user: "${message.slice(0, 80)}${message.length > 80 ? '...' : ''}"`)
     this.client.sendMessage(message)
   }
 

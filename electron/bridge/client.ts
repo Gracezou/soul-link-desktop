@@ -135,7 +135,10 @@ export class OpenClawClient extends EventEmitter {
   }
 
   private handleChatEvent(payload: ChatEventPayload): void {
-    if (payload.state !== 'final') return
+    if (payload.state !== 'final') {
+      logger.log(`← chat event [${payload.runId}] state=${payload.state}`)
+      return
+    }
     if (!payload.message?.content?.length) return
 
     const text = payload.message.content
@@ -145,6 +148,7 @@ export class OpenClawClient extends EventEmitter {
 
     if (!text) return
 
+    logger.log(`← chat final [${payload.runId}] ${text.length} chars`)
     const bridgeMsg: BridgeMessage = { runId: payload.runId, text }
     this.emit('message', bridgeMsg)
   }
@@ -167,13 +171,15 @@ export class OpenClawClient extends EventEmitter {
   }
 
   sendMessage(message: string): void {
+    const idempotencyKey = uuidv4()
     const params = {
       message,
       sessionKey: this.config.sessionKey,
-      idempotencyKey: uuidv4(),
+      idempotencyKey,
     }
     // Fire-and-forget for chat messages (responses come as events)
     const req = { type: 'req', id: uuidv4(), method: 'chat.send', params }
+    logger.log(`→ chat.send [idem:${idempotencyKey.slice(0, 8)}] "${message.slice(0, 60)}${message.length > 60 ? '...' : ''}"`)
     this.sendRaw(JSON.stringify(req))
   }
 
