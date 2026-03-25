@@ -110,7 +110,11 @@ export class BridgeWorker {
       const startResponse = await this.client.waitForFinalResponse(30000)
       logger.log(`rp start responded (${Date.now() - tStart}ms)`)
 
-      if (startResponse.text.includes('❌')) {
+      const isStartSuccess =
+        startResponse.text.includes('✅') ||
+        startResponse.text.includes('Active session already exists')
+
+      if (!isStartSuccess) {
         throw new Error(`Failed to start RP session: ${startResponse.text}`)
       }
 
