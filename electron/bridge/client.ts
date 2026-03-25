@@ -172,9 +172,10 @@ export class OpenClawClient extends EventEmitter {
 
   sendMessage(message: string): void {
     const idempotencyKey = uuidv4()
+    const sessionKey = this.config.sessionKey || 'dyberpet-default'
     const params = {
       message,
-      sessionKey: this.config.sessionKey,
+      sessionKey,
       idempotencyKey,
     }
     // Fire-and-forget for chat messages (responses come as events)

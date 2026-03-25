@@ -27,7 +27,7 @@ export function OnboardingWizard(): React.ReactElement {
 
   async function handleFinish() {
     await window.electronAPI?.invoke('settings:set', {
-      openclaw: { gatewayWsUrl, authToken, defaultCard: selectedCard },
+      openclaw: { gatewayWsUrl, authToken, defaultCard: selectedCard, sessionKey: 'dyberpet-default' },
       companion: { enabled: companionEnabled, idleMinutes },
       pet: { character: selectedCard },
       ui: { language, theme },

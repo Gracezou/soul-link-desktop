@@ -500,6 +500,7 @@ function launchMainApp(): void {
   bridgeWorker = new BridgeWorker({
     ...DEFAULT_BRIDGE_CONFIG,
     ...settings.openclaw,
+    sessionKey: settings.openclaw.sessionKey || DEFAULT_BRIDGE_CONFIG.sessionKey,
   })
   bridgeWorker.setMainWindow(petWindow)
   bridgeWorker.onMessage = (msg) => {
