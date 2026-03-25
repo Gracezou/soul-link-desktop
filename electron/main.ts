@@ -297,6 +297,11 @@ function setupIpcHandlers(): void {
     petWindow.setSize(width, data.height, true)
   })
 
+  ipcMain.on('pet:set-clickthrough', (_event, data: { enabled: boolean }) => {
+    if (!petWindow || petWindow.isDestroyed()) return
+    petWindow.setIgnoreMouseEvents(data.enabled, { forward: data.enabled })
+  })
+
   // Onboarding complete: close onboarding window, launch main app
   ipcMain.on(IPC.ONBOARDING_COMPLETE, () => {
     if (onboardingWindow && !onboardingWindow.isDestroyed()) {

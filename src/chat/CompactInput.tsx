@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PresetButtons } from './PresetButtons'
 import styles from './chat.module.css'
@@ -11,6 +11,14 @@ interface CompactInputProps {
 export function CompactInput({ visible, onSend }: CompactInputProps): React.ReactElement {
   const { t } = useTranslation()
   const [text, setText] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (visible) {
+      const timer = setTimeout(() => inputRef.current?.focus(), 150)
+      return () => clearTimeout(timer)
+    }
+  }, [visible])
 
   const handleSend = () => {
     const msg = text.trim()
@@ -30,6 +38,7 @@ export function CompactInput({ visible, onSend }: CompactInputProps): React.Reac
     <div className={`${styles.compactInput} ${visible ? styles.compactInputVisible : ''}`}>
       <div className={styles.inputRow}>
         <input
+          ref={inputRef}
           className={styles.inputField}
           type="text"
           placeholder={t('chat.inputPlaceholder')}

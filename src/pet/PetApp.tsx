@@ -22,6 +22,8 @@ export function PetApp(): React.ReactElement {
   const [currentMessage, setCurrentMessage] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
   const dragStart = useRef({ x: 0, y: 0 })
+  const hoveredRef = useRef(false)
+  const inputVisibleRef = useRef(false)
 
   // Force pet window fully transparent — inject <style> to override global.css body rule
   useEffect(() => {
@@ -88,6 +90,7 @@ export function PetApp(): React.ReactElement {
     // Auto-collapse input when drag starts
     setInputVisible(prev => {
       if (prev) {
+        inputVisibleRef.current = false
         window.electronAPI?.send('pet:resize-window', { height: BASE_HEIGHT })
         return false
       }
@@ -96,21 +99,34 @@ export function PetApp(): React.ReactElement {
   }, [])
 
   const handleMouseEnter = useCallback(() => {
+    hoveredRef.current = true
     setHovered(true)
     window.electronAPI?.send('pet:mouse-enter')
   }, [])
 
   const handleMouseLeave = useCallback(() => {
+    hoveredRef.current = false
     setHovered(false)
+    if (inputVisibleRef.current) {
+      return
+    }
     window.electronAPI?.send('pet:mouse-leave')
   }, [])
 
   const handleChatToggle = useCallback(() => {
     setInputVisible(prev => {
       const next = !prev
+      inputVisibleRef.current = next
       window.electronAPI?.send('pet:resize-window', {
         height: next ? EXPANDED_HEIGHT : BASE_HEIGHT,
       })
+      if (next) {
+        window.electronAPI?.send('pet:set-clickthrough', { enabled: false })
+      } else {
+        if (!hoveredRef.current) {
+          window.electronAPI?.send('pet:set-clickthrough', { enabled: true })
+        }
+      }
       return next
     })
   }, [])
