@@ -184,7 +184,7 @@
 /* ── Compact Input (Layer 2) ── */
 
 .compactInput {
-  width: 280px;
+  width: 300px;
   margin: 4px auto 0;
   background: var(--bg-secondary);
   border-radius: 16px;
@@ -263,7 +263,8 @@
 
 .presetButton {
   flex: 1;
-  padding: 6px 8px;
+  min-width: 0;
+  padding: 6px 4px;
   border-radius: 12px;
   border: 1px solid var(--divider);
   background: var(--bg-primary);

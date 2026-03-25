@@ -268,6 +268,10 @@ function setupIpcHandlers(): void {
     BrowserWindow.fromWebContents(event.sender)?.close()
   })
 
+  ipcMain.on('window:close-history', () => {
+    if (historyWindow && !historyWindow.isDestroyed()) historyWindow.close()
+  })
+
   // Pet window drag (delta-based)
   ipcMain.on('pet:move-window', (_event, data: { deltaX: number; deltaY: number }) => {
     if (!petWindow || petWindow.isDestroyed()) return

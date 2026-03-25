@@ -23,13 +23,13 @@ export function PetApp(): React.ReactElement {
   const [dragging, setDragging] = useState(false)
   const dragStart = useRef({ x: 0, y: 0 })
 
-  // Make pet window body/root fully transparent so input panel isn't clipped
+  // Force pet window fully transparent — inject <style> to override global.css body rule
   useEffect(() => {
-    document.documentElement.style.background = 'transparent'
-    document.body.style.background = 'transparent'
-    document.body.style.overflow = 'hidden'
-    const root = document.getElementById('root')
-    if (root) root.style.background = 'transparent'
+    const style = document.createElement('style')
+    style.id = 'pet-transparent'
+    style.textContent = 'html, body, #root { background: transparent !important; overflow: hidden; }'
+    document.head.appendChild(style)
+    return () => { document.getElementById('pet-transparent')?.remove() }
   }, [])
 
   useEffect(() => {
