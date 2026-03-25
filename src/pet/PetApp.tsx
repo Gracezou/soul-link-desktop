@@ -182,7 +182,7 @@ export function PetApp(): React.ReactElement {
           <PetCanvas />
         )}
       </div>
-      <Toolbar visible={hovered} onChatClick={handleChatToggle} />
+      <Toolbar visible={hovered && !inputVisible} onChatClick={handleChatToggle} />
       <CompactInput visible={inputVisible} onSend={handleSend} />
     </div>
   )
