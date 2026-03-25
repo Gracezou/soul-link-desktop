@@ -23,6 +23,15 @@ export function PetApp(): React.ReactElement {
   const [dragging, setDragging] = useState(false)
   const dragStart = useRef({ x: 0, y: 0 })
 
+  // Make pet window body/root fully transparent so input panel isn't clipped
+  useEffect(() => {
+    document.documentElement.style.background = 'transparent'
+    document.body.style.background = 'transparent'
+    document.body.style.overflow = 'hidden'
+    const root = document.getElementById('root')
+    if (root) root.style.background = 'transparent'
+  }, [])
+
   useEffect(() => {
     async function checkSprites() {
       try {
@@ -76,6 +85,14 @@ export function PetApp(): React.ReactElement {
     if (e.button !== 0) return
     setDragging(true)
     dragStart.current = { x: e.screenX, y: e.screenY }
+    // Auto-collapse input when drag starts
+    setInputVisible(prev => {
+      if (prev) {
+        window.electronAPI?.send('pet:resize-window', { height: BASE_HEIGHT })
+        return false
+      }
+      return prev
+    })
   }, [])
 
   const handleMouseEnter = useCallback(() => {
@@ -104,7 +121,7 @@ export function PetApp(): React.ReactElement {
 
   return (
     <div
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 200, overflow: 'hidden' }}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 200, overflow: 'visible' }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >

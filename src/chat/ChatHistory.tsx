@@ -7,7 +7,6 @@ import styles from './chat.module.css'
 export function ChatHistory(): React.ReactElement {
   const { t } = useTranslation()
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [text, setText] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -30,13 +29,6 @@ export function ChatHistory(): React.ReactElement {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleSend = () => {
-    const msg = text.trim()
-    if (!msg) return
-    window.electronAPI?.invoke('bridge:send', { message: msg })
-    setText('')
-  }
-
   return (
     <div className={styles.chatHistory}>
       <div className={styles.chatHeader}>
@@ -58,19 +50,6 @@ export function ChatHistory(): React.ReactElement {
           <MessageBubble key={msg.id} message={msg} />
         ))}
         <div ref={bottomRef} />
-      </div>
-      <div className={styles.inputArea}>
-        <input
-          className={styles.textInput}
-          type="text"
-          placeholder={t('chat.inputPlaceholder')}
-          value={text}
-          onChange={e => setText(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') handleSend() }}
-        />
-        <button className={styles.sendButton} onClick={handleSend} disabled={!text.trim()}>
-          {t('chat.send')}
-        </button>
       </div>
     </div>
   )

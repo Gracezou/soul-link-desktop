@@ -12,6 +12,7 @@ export function createPetWindow(savedX?: number, savedY?: number): BrowserWindow
     x: savedX ?? width - 220,
     y: savedY ?? height - 220,
     transparent: true,
+    backgroundColor: '#00000000',
     frame: false,
     alwaysOnTop: true,
     skipTaskbar: true,
