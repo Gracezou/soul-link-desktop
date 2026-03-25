@@ -13,6 +13,8 @@ const PADDING = 16
 const INPUT_PANEL_HEIGHT = 110
 const BASE_HEIGHT = SPRITE_HEIGHT + TOOLBAR_HEIGHT + PADDING
 const EXPANDED_HEIGHT = BASE_HEIGHT + INPUT_PANEL_HEIGHT
+const PET_WINDOW_WIDTH = 200
+const EXPANDED_WIDTH = 320
 
 export function PetApp(): React.ReactElement {
   const { t } = useTranslation()
@@ -91,7 +93,11 @@ export function PetApp(): React.ReactElement {
     setInputVisible(prev => {
       if (prev) {
         inputVisibleRef.current = false
-        window.electronAPI?.send('pet:resize-window', { height: BASE_HEIGHT })
+        window.electronAPI?.send('pet:resize-window', { width: PET_WINDOW_WIDTH, height: BASE_HEIGHT })
+        window.electronAPI?.send('pet:set-focusable', { focusable: false })
+        if (!hoveredRef.current) {
+          window.electronAPI?.send('pet:set-clickthrough', { enabled: true })
+        }
         return false
       }
       return prev
@@ -118,11 +124,14 @@ export function PetApp(): React.ReactElement {
       const next = !prev
       inputVisibleRef.current = next
       window.electronAPI?.send('pet:resize-window', {
+        width: next ? EXPANDED_WIDTH : PET_WINDOW_WIDTH,
         height: next ? EXPANDED_HEIGHT : BASE_HEIGHT,
       })
       if (next) {
         window.electronAPI?.send('pet:set-clickthrough', { enabled: false })
+        window.electronAPI?.send('pet:set-focusable', { focusable: true })
       } else {
+        window.electronAPI?.send('pet:set-focusable', { focusable: false })
         if (!hoveredRef.current) {
           window.electronAPI?.send('pet:set-clickthrough', { enabled: true })
         }

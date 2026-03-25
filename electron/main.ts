@@ -291,15 +291,26 @@ function setupIpcHandlers(): void {
     }, 500)
   })
 
-  ipcMain.on('pet:resize-window', (_event, data: { height: number }) => {
+  ipcMain.on('pet:resize-window', (_event, data: { width?: number; height: number }) => {
     if (!petWindow || petWindow.isDestroyed()) return
-    const [width] = petWindow.getSize()
-    petWindow.setSize(width, data.height, true)
+    const [currentWidth] = petWindow.getSize()
+    petWindow.setSize(data.width ?? currentWidth, data.height, true)
   })
 
   ipcMain.on('pet:set-clickthrough', (_event, data: { enabled: boolean }) => {
     if (!petWindow || petWindow.isDestroyed()) return
     petWindow.setIgnoreMouseEvents(data.enabled, { forward: data.enabled })
+  })
+
+  ipcMain.on('pet:set-focusable', (_event, data: { focusable: boolean }) => {
+    if (!petWindow || petWindow.isDestroyed()) return
+    petWindow.setFocusable(data.focusable)
+    if (data.focusable) {
+      setTimeout(() => {
+        if (!petWindow || petWindow.isDestroyed()) return
+        petWindow.focus()
+      }, 50)
+    }
   })
 
   // Onboarding complete: close onboarding window, launch main app

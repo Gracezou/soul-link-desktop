@@ -50,7 +50,7 @@ export function CompactInput({ visible, onSend }: CompactInputProps): React.Reac
           ➤
         </button>
       </div>
-      <PresetButtons onSend={onSend} />
+      <PresetButtons onFill={setText} />
     </div>
   )
 }

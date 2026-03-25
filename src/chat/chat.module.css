@@ -15,6 +15,30 @@
   background: var(--chat-header-bg);
   border-bottom: 1px solid var(--divider);
   flex-shrink: 0;
+  -webkit-app-region: drag;
+}
+
+.chatHeaderButton {
+  -webkit-app-region: no-drag;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.chatHeaderButton:hover {
+  color: var(--text-primary);
+  background: var(--toolbar-hover);
+}
+
+/* Prevent interactive elements inside draggable header from being absorbed into drag region */
+.chatHeader button,
+.chatHeader a,
+.chatHeader input {
+  -webkit-app-region: no-drag;
 }
 
 .characterName {

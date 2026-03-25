@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next'
 import styles from './chat.module.css'
 
 interface PresetButtonsProps {
-  onSend: (message: string) => void
+  onFill: (text: string) => void
 }
 
 const PRESETS = ['greeting', 'miss', 'whatsDoing'] as const
 
-export function PresetButtons({ onSend }: PresetButtonsProps): React.ReactElement {
+export function PresetButtons({ onFill }: PresetButtonsProps): React.ReactElement {
   const { t } = useTranslation()
   return (
     <div className={styles.presetRow}>
@@ -16,7 +16,7 @@ export function PresetButtons({ onSend }: PresetButtonsProps): React.ReactElemen
         <button
           key={key}
           className={styles.presetButton}
-          onClick={() => onSend(t(`chat.presets.${key}`))}
+          onClick={() => onFill(t(`chat.presets.${key}`))}
         >
           {t(`chat.presets.${key}`)}
         </button>
