@@ -35,7 +35,7 @@ export function ChatHistory(): React.ReactElement {
         <span className={styles.characterName}>{t('chat.historyTitle')}</span>
         <button
           className={styles.chatHeaderButton}
-          onClick={() => window.electronAPI?.send('window:close-history')}
+  onClick={() => window.electronAPI?.send('window:close')}
         >
           ✕
         </button>

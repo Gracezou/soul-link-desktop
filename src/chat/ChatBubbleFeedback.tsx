@@ -106,12 +106,27 @@ export function ChatBubbleFeedback(_props: ChatBubbleFeedbackProps): React.React
     }
 
     const onDelta = (data: { runId: string; text: string }) => {
-      if (currentRunId.current && data.runId !== currentRunId.current) return
+      if (currentRunId.current && data.runId !== currentRunId.current) {
+        if (phaseRef.current === 'idle' || phaseRef.current === 'displayed') {
+          // New message started without ACK — reset for new run
+          console.log('[Bubble] onDelta: new run detected, resetting from', currentRunId.current, 'to', data.runId)
+          currentRunId.current = ''
+          typewriterIndex.current = 0
+          clearTypewriter()
+          clearDismissTimer()
+        } else {
+          console.log('[Bubble] onDelta: runId mismatch, dropping (active run:', currentRunId.current, 'got:', data.runId, ')')
+          return
+        }
+      }
       if (!currentRunId.current) currentRunId.current = data.runId
       console.log('[Bubble] onDelta', data.runId, 'text length:', data.text.length)
       fullTextRef.current = data.text
       setFullText(data.text)
       if (phaseRef.current === 'waiting') {
+        phaseRef.current = 'streaming'
+        setPhase('streaming')
+      } else if (phaseRef.current === 'idle' || phaseRef.current === 'displayed') {
         phaseRef.current = 'streaming'
         setPhase('streaming')
       }
@@ -122,17 +137,26 @@ export function ChatBubbleFeedback(_props: ChatBubbleFeedbackProps): React.React
     }
 
     const onFinal = (data: { runId: string; text: string }) => {
-      // If no ACK was received (currentRunId empty), accept any final message
-      if (currentRunId.current && data.runId !== currentRunId.current) return
+      if (currentRunId.current && data.runId !== currentRunId.current) {
+        if (phaseRef.current === 'idle' || phaseRef.current === 'displayed') {
+          // New message started without ACK — reset for new run
+          console.log('[Bubble] onFinal: new run detected, resetting from', currentRunId.current, 'to', data.runId)
+          currentRunId.current = ''
+          typewriterIndex.current = 0
+          clearTypewriter()
+          clearDismissTimer()
+        } else {
+          console.log('[Bubble] onFinal: runId mismatch, dropping (active run:', currentRunId.current, 'got:', data.runId, ')')
+          return
+        }
+      }
       if (!currentRunId.current) currentRunId.current = data.runId
       console.log('[Bubble] onFinal', data.runId, 'text length:', data.text.length)
       fullTextRef.current = data.text
       setFullText(data.text)
-      // Transition to displayed — typewriter will trigger startDismissTimer when done
       phaseRef.current = 'displayed'
       setPhase('displayed')
       if (typewriterIndex.current >= data.text.length) {
-        // Already done
         startDismissTimer()
       } else if (!typewriterTimer.current) {
         scheduleTypewriter()
