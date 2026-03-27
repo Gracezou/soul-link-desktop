@@ -109,8 +109,12 @@ export class OpenClawClient extends EventEmitter {
         pending.resolve(res)
       }
       // Detect chat.send ACK — fire-and-forget responses carry payload.status
-      if (res.ok && res.payload?.status === 'started' && res.payload?.runId) {
-        this.emit('ack', { runId: res.payload.runId as string })
+      if (res.ok) {
+        logger.log(`← res ok id=${res.id} payload=${JSON.stringify(res.payload ?? null)}`)
+        if (res.payload?.status === 'started' && res.payload?.runId) {
+          logger.log(`← ACK detected runId=${res.payload.runId}`)
+          this.emit('ack', { runId: res.payload.runId as string })
+        }
       }
     }
   }

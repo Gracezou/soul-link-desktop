@@ -31,5 +31,6 @@ export function parseBubbleText(raw: string): TextSegment[] {
     if (remaining) segments.push({ type: 'text', text: remaining })
   }
 
+  console.log('[BubbleParser] input:', raw.slice(0, 80), '-> segments:', segments.length)
   return segments
 }

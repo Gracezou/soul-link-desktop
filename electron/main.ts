@@ -428,6 +428,9 @@ function setupIpcHandlers(): void {
       frame: false,
       transparent: false,
       resizable: true,
+      focusable: true,
+      movable: true,
+      closable: true,
       webPreferences: {
         preload: path.join(__dirname, '../preload.js'),
         contextIsolation: true,

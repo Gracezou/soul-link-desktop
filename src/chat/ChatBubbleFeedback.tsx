@@ -93,6 +93,7 @@ export function ChatBubbleFeedback(_props: ChatBubbleFeedbackProps): React.React
     if (!api) return
 
     const onAck = (data: { runId: string }) => {
+      console.log('[Bubble] onAck', data.runId)
       currentRunId.current = data.runId
       phaseRef.current = 'waiting'
       setPhase('waiting')
@@ -105,7 +106,9 @@ export function ChatBubbleFeedback(_props: ChatBubbleFeedbackProps): React.React
     }
 
     const onDelta = (data: { runId: string; text: string }) => {
-      if (data.runId !== currentRunId.current) return
+      if (currentRunId.current && data.runId !== currentRunId.current) return
+      if (!currentRunId.current) currentRunId.current = data.runId
+      console.log('[Bubble] onDelta', data.runId, 'text length:', data.text.length)
       fullTextRef.current = data.text
       setFullText(data.text)
       if (phaseRef.current === 'waiting') {
@@ -119,7 +122,10 @@ export function ChatBubbleFeedback(_props: ChatBubbleFeedbackProps): React.React
     }
 
     const onFinal = (data: { runId: string; text: string }) => {
-      if (data.runId !== currentRunId.current) return
+      // If no ACK was received (currentRunId empty), accept any final message
+      if (currentRunId.current && data.runId !== currentRunId.current) return
+      if (!currentRunId.current) currentRunId.current = data.runId
+      console.log('[Bubble] onFinal', data.runId, 'text length:', data.text.length)
       fullTextRef.current = data.text
       setFullText(data.text)
       // Transition to displayed — typewriter will trigger startDismissTimer when done
