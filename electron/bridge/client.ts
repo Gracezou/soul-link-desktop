@@ -19,6 +19,8 @@ export type ClientEvent =
   | 'disconnected'
   | 'message'
   | 'error'
+  | 'ack'
+  | 'delta'
 
 export class OpenClawClient extends EventEmitter {
   private ws: WebSocket | null = null
@@ -106,6 +108,10 @@ export class OpenClawClient extends EventEmitter {
         this.pendingRequests.delete(res.id)
         pending.resolve(res)
       }
+      // Detect chat.send ACK — fire-and-forget responses carry payload.status
+      if (res.ok && res.payload?.status === 'started' && res.payload?.runId) {
+        this.emit('ack', { runId: res.payload.runId as string })
+      }
     }
   }
 
@@ -137,6 +143,13 @@ export class OpenClawClient extends EventEmitter {
   private handleChatEvent(payload: ChatEventPayload): void {
     if (payload.state !== 'final') {
       logger.log(`← chat event [${payload.runId}] state=${payload.state}`)
+      if (payload.state === 'delta' && payload.message?.content?.length) {
+        const text = payload.message.content
+          .filter((c: { type: string; text?: string }) => c.type === 'text' && c.text)
+          .map((c: { type: string; text?: string }) => c.text!)
+          .join('')
+        if (text) this.emit('delta', { runId: payload.runId, text })
+      }
       return
     }
     if (!payload.message?.content?.length) return

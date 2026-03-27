@@ -21,7 +21,6 @@ export function PetApp(): React.ReactElement {
   const [hasSprites, setHasSprites] = useState<boolean | null>(null)
   const [hovered, setHovered] = useState(false)
   const [inputVisible, setInputVisible] = useState(false)
-  const [currentMessage, setCurrentMessage] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
   const dragStart = useRef({ x: 0, y: 0 })
   const hoveredRef = useRef(false)
@@ -51,17 +50,6 @@ export function PetApp(): React.ReactElement {
       }
     }
     void checkSprites()
-  }, [])
-
-  useEffect(() => {
-    const api = window.electronAPI
-    if (!api) return
-    const handler = (...args: unknown[]) => {
-      const data = args[0] as { text: string }
-      setCurrentMessage(data.text)
-    }
-    const off = api.on('bridge:message', handler)
-    return () => { off() }
   }, [])
 
   // JS-based drag: track delta and send IPC to move window
@@ -155,10 +143,7 @@ export function PetApp(): React.ReactElement {
         style={{ position: 'relative', cursor: dragging ? 'grabbing' : 'grab' }}
         onMouseDown={onPetMouseDown}
       >
-        <ChatBubbleFeedback
-          message={currentMessage}
-          onDismiss={() => setCurrentMessage(null)}
-        />
+        <ChatBubbleFeedback />
         {hasSprites === false ? (
           <div style={{
             width: 200,

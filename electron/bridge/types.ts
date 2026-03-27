@@ -17,6 +17,7 @@ export interface GatewayResponse extends GatewayFrame {
   ok: boolean
   result?: unknown
   error?: { code: number; message: string }
+  payload?: Record<string, unknown>
 }
 
 export interface GatewayEvent extends GatewayFrame {

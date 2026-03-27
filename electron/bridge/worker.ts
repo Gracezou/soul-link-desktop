@@ -40,6 +40,16 @@ export class BridgeWorker {
       logger.log(`← AI [${msg.runId}] ${msg.text.length} chars: "${msg.text.slice(0, 60)}${msg.text.length > 60 ? '...' : ''}"`)
       if (this.onMessage) this.onMessage(msg)
       this.sendToRenderer(IPC.BRIDGE_MESSAGE, msg)
+      this.sendToRenderer(IPC.CHAT_FINAL, { runId: msg.runId, text: msg.text })
+    })
+
+    this.client.on('ack', (data: { runId: string }) => {
+      logger.log(`← ACK [${data.runId}]`)
+      this.sendToRenderer(IPC.CHAT_ACK, data)
+    })
+
+    this.client.on('delta', (data: { runId: string; text: string }) => {
+      this.sendToRenderer(IPC.CHAT_DELTA, data)
     })
 
     this.client.on('error', (err: { message: string }) => {

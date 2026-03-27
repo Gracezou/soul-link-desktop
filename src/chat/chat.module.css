@@ -171,7 +171,7 @@
   cursor: not-allowed;
 }
 
-/* ── Chat Bubble Feedback (Layer 1) ── */
+/* ── Chat Bubble Feedback ── */
 
 .chatBubble {
   position: absolute;
@@ -179,30 +179,65 @@
   left: 50%;
   transform: translateX(-50%) translateY(8px);
   max-width: 280px;
-  padding: 12px 16px;
+  min-width: 100px;
+  padding: 10px 14px;
   background: var(--chat-bubble-assistant);
   border: 1px solid var(--chat-bubble-border);
   border-radius: 16px 16px 16px 4px;
-  box-shadow: 0 4px 12px var(--shadow);
-  font-size: 14px;
+  box-shadow: 0 4px 16px var(--shadow);
+  font-size: 13px;
   line-height: 1.6;
   color: var(--text-primary);
+  cursor: pointer;
   opacity: 0;
   transition: opacity 0.3s ease, transform 0.3s ease;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-
-  cursor: pointer;
-  z-index: 10;
-  white-space: pre-wrap;
-  word-break: break-word;
+  -webkit-app-region: no-drag;
+  pointer-events: auto;
+  z-index: 100;
+  max-height: 180px;
+  overflow-y: auto;
 }
 
 .chatBubbleVisible {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+.bubbleWaitingDots {
+  display: inline-flex;
+  gap: 3px;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+.bubbleWaitingDots span {
+  animation: dotPulse 1.4s ease-in-out infinite;
+}
+
+.bubbleWaitingDots span:nth-child(2) { animation-delay: 0.2s; }
+.bubbleWaitingDots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dotPulse {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+.bubbleText {
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.bubbleAction {
+  font-style: italic;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.bubbleDialogue {
+  display: block;
+  margin-bottom: 2px;
 }
 
 /* ── Compact Input (Layer 2) ── */

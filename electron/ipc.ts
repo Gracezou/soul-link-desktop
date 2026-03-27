@@ -41,4 +41,8 @@ export const IPC = {
   WINDOW_OPEN_HISTORY: 'window:open-history',
   CHAT_GET_HISTORY: 'chat:get-history',
   CHAT_ON_MESSAGE: 'chat:on-message',
+  // Chat streaming (bubble feedback)
+  CHAT_ACK: 'chat:ack',
+  CHAT_DELTA: 'chat:delta',
+  CHAT_FINAL: 'chat:final',
 } as const
