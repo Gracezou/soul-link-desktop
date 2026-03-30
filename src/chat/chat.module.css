@@ -175,9 +175,9 @@
 
 .chatBubble {
   position: absolute;
-  bottom: calc(100% + 8px);
+  top: 8px;
   left: 50%;
-  transform: translateX(-50%) translateY(8px);
+  transform: translateX(-50%) translateY(-8px);
   max-width: 280px;
   min-width: 100px;
   padding: 10px 14px;
