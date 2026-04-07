@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
 ## Project Overview
 AI-powered desktop companion app (乙女游戏角色情感伴侣). Built with Electron + React + TypeScript. Connects to an OpenClaw AI gateway over WebSocket to drive an animated pet sprite and chat interface.
@@ -90,7 +90,7 @@ User input → ChatWindow → invoke('bridge:send')
 
 ## Subagent Orchestration — MANDATORY
 
-This project has 6 specialized subagents defined in `.claude/agents/`.
+This project has 6 specialized subagents defined in `.Codex/agents/`.
 
 ### ⚠️ CRITICAL: No Direct Code Changes in Main Conversation
 

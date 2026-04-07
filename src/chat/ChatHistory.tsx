@@ -8,6 +8,10 @@ export function ChatHistory(): React.ReactElement {
   const { t } = useTranslation()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const bottomRef = useRef<HTMLDivElement>(null)
+  const handleClose = (): void => {
+    window.electronAPI?.send('window:close-history')
+    window.close()
+  }
 
   useEffect(() => {
     const api = window.electronAPI
@@ -35,7 +39,10 @@ export function ChatHistory(): React.ReactElement {
         <span className={styles.characterName}>{t('chat.historyTitle')}</span>
         <button
           className={styles.chatHeaderButton}
-  onClick={() => window.electronAPI?.send('window:close')}
+          type="button"
+          onClick={handleClose}
+          title={t('common.close')}
+          aria-label={t('common.close')}
         >
           ✕
         </button>
