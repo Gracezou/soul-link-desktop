@@ -20,13 +20,11 @@ if (!gotTheLock) {
 }
 import path from 'path'
 import fs from 'fs'
-import WebSocket from 'ws'
 import { IPC } from './ipc'
 import { createLogger } from './logger'
 
 const mainLogger = createLogger('Main')
-import { BridgeWorker } from './bridge/worker'
-import { DEFAULT_BRIDGE_CONFIG } from './bridge/config'
+import { SoulLinkAgent } from './agent'
 import { createPetWindow } from './windows/petWindow'
 import { createChatWindow } from './windows/chatWindow'
 import { createSettingsWindow } from './windows/settingsWindow'
@@ -40,24 +38,12 @@ process.env.SOUL_LINK_RES_BASE = app.isPackaged
   : path.join(__dirname, '../res')
 
 let historyWindow: BrowserWindow | null = null
-const MAX_HISTORY = 500
-interface HistoryMessage { id: string; role: 'user' | 'assistant'; text: string; timestamp: number }
-const messageHistory: HistoryMessage[] = []
-let histMsgCounter = 0
-function pushHistory(msg: Omit<HistoryMessage, 'id'>): HistoryMessage {
-  const full: HistoryMessage = { id: `h-${++histMsgCounter}`, ...msg }
-  messageHistory.push(full)
-  if (messageHistory.length > MAX_HISTORY) messageHistory.splice(0, messageHistory.length - MAX_HISTORY)
-  if (historyWindow && !historyWindow.isDestroyed()) {
-    historyWindow.webContents.send(IPC.CHAT_ON_MESSAGE, full)
-  }
-  return full
-}
 let mainWindow: BrowserWindow | null = null   // chat window
 let petWindow: BrowserWindow | null = null
 let settingsWindow: BrowserWindow | null = null
 let onboardingWindow: BrowserWindow | null = null
-let bridgeWorker: BridgeWorker | null = null
+let agent: SoulLinkAgent | null = null
+let agentReady = false
 let tray: Tray | null = null
 let companion: CompanionScheduler | null = null
 
@@ -112,14 +98,31 @@ function setupTray(): void {
 }
 
 function setupIpcHandlers(): void {
-  // Bridge
-  ipcMain.handle(IPC.BRIDGE_SEND, async (_event, data: { message: string }) => {
-    pushHistory({ role: 'user', text: data.message, timestamp: Date.now() })
-    await bridgeWorker?.sendMessage(data.message)
-  })
-
-  ipcMain.handle(IPC.BRIDGE_SEND_COMMAND, async (_event, data: { command: string }) => {
-    await bridgeWorker?.sendCommand(data.command)
+  // Agent
+  ipcMain.on(IPC.AGENT_SEND, (_event, data: { message: string }) => {
+    if (!agent) {
+      petWindow?.webContents.send(IPC.AGENT_ERROR, { messageId: '', error: 'Agent not initialized' })
+      return
+    }
+    void agent.sendMessage(data.message, {
+      onWaiting: (msgId) => {
+        petWindow?.webContents.send(IPC.AGENT_WAITING, { messageId: msgId })
+      },
+      onDelta: (msgId, delta) => {
+        petWindow?.webContents.send(IPC.AGENT_DELTA, { messageId: msgId, delta })
+      },
+      onFinal: (msgId, text) => {
+        petWindow?.webContents.send(IPC.AGENT_FINAL, { messageId: msgId, text })
+      },
+      onError: (msgId, error) => {
+        petWindow?.webContents.send(IPC.AGENT_ERROR, { messageId: msgId, error })
+      },
+      onSaved: (msg) => {
+        if (historyWindow && !historyWindow.isDestroyed()) {
+          historyWindow.webContents.send(IPC.AGENT_MESSAGE_SAVED, { message: msg })
+        }
+      },
+    })
   })
 
   // Settings
@@ -172,96 +175,42 @@ function setupIpcHandlers(): void {
     createSettingsWindowInstance()
   })
 
-  // Onboarding: test connection with full OpenClaw handshake validation
-  ipcMain.handle(IPC.BRIDGE_TEST_CONNECTION, async (_event, data: { gatewayWsUrl: string; authToken: string }) => {
-    const testLogger = createLogger('TestConn')
-    return new Promise<{ success: boolean; error?: string }>((resolve) => {
-      let resolved = false
+  ipcMain.handle(IPC.AGENT_GET_HISTORY, async () => {
+    if (!agent) return []
+    return agent.getHistory()
+  })
 
-      function done(result: { success: boolean; error?: string }): void {
-        if (resolved) return
-        resolved = true
-        clearTimeout(timeout)
-        try { ws.terminate() } catch { /* ignore */ }
-        resolve(result)
+  ipcMain.handle(IPC.AGENT_TEST_CONNECTION, async (_event, data: { baseUrl: string; apiKey: string; model: string }) => {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 10000)
+    try {
+      const baseUrl = data.baseUrl.replace(/\/+$/, '')
+      const response = await globalThis.fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${data.apiKey}` },
+        body: JSON.stringify({ model: data.model, messages: [{ role: 'user', content: 'ping' }], stream: false }),
+        signal: controller.signal,
+      })
+      if (!response.ok) {
+        const text = await response.text().catch(() => '')
+        return { success: false, error: `HTTP ${response.status}: ${text.slice(0, 200)}` }
       }
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: String(err) }
+    } finally {
+      clearTimeout(timeout)
+    }
+  })
 
-      const timeout = setTimeout(() => {
-        testLogger.warn('Connection test timed out after 15s')
-        done({ success: false, error: '连接超时' })
-      }, 15000)
+  ipcMain.handle(IPC.AGENT_GET_STATUS, () => {
+    return { ready: agentReady, character: getSettings().character.cardName }
+  })
 
-      const origin = data.gatewayWsUrl
-        .replace(/^ws:\/\//, 'http://')
-        .replace(/^wss:\/\//, 'https://')
-        .replace(/\/$/, '')
-
-      const url = `${data.gatewayWsUrl}?token=${encodeURIComponent(data.authToken)}`
-      testLogger.log('Opening test connection to:', data.gatewayWsUrl)
-      const ws = new WebSocket(url, { headers: { origin } })
-
-      ws.on('open', () => {
-        testLogger.log('TCP connection established, waiting for challenge...')
-      })
-
-      ws.on('message', (raw: WebSocket.RawData) => {
-        let msg: { type: string; event?: string; id?: string; ok?: boolean }
-        try {
-          msg = JSON.parse(raw.toString()) as { type: string; event?: string; id?: string; ok?: boolean }
-        } catch {
-          testLogger.warn('Failed to parse message during test:', raw.toString())
-          return
-        }
-
-        // Step 2: Receive challenge → send connect request
-        if (msg.type === 'event' && msg.event === 'connect.challenge') {
-          testLogger.log('Received connect.challenge, sending connect request...')
-          const req = JSON.stringify({
-            type: 'req',
-            id: '1',
-            method: 'connect',
-            params: {
-              minProtocol: 3,
-              maxProtocol: 3,
-              role: 'operator',
-              scopes: ['operator.admin', 'operator.approvals', 'operator.pairing'],
-              auth: { token: data.authToken },
-              client: {
-                id: 'openclaw-control-ui',
-                version: 'dev',
-                platform: process.platform,
-                mode: 'webchat',
-              },
-              caps: [],
-              locale: 'zh-CN',
-            },
-          })
-          ws.send(req)
-          return
-        }
-
-        // Step 4: Receive connect response
-        if (msg.type === 'res' && msg.id === '1') {
-          if (msg.ok) {
-            testLogger.log('Handshake succeeded — token valid')
-            done({ success: true })
-          } else {
-            testLogger.warn('Handshake rejected — token invalid or insufficient permissions')
-            done({ success: false, error: 'token 无效或权限不足' })
-          }
-        }
-      })
-
-      ws.on('close', () => {
-        testLogger.log('Connection closed before handshake completed')
-        done({ success: false, error: '连接被服务器关闭' })
-      })
-
-      ws.on('error', (err: Error) => {
-        testLogger.error('Connection test error:', err.message)
-        done({ success: false, error: err.message })
-      })
-    })
+  ipcMain.on(IPC.AGENT_RESET_SESSION, async () => {
+    if (!agent) return
+    await agent.resetSession()
+    petWindow?.webContents.send(IPC.AGENT_READY, { ready: true, character: getSettings().character.cardName })
   })
 
   ipcMain.on('window:close', (event) => {
@@ -330,11 +279,6 @@ function setupIpcHandlers(): void {
   // Companion
   ipcMain.handle(IPC.COMPANION_STATUS, async () => {
     return { running: companion?.isRunning ?? false }
-  })
-
-  // Bridge session status query — renderer calls this on mount to sync missed events
-  ipcMain.handle(IPC.BRIDGE_GET_SESSION, () => {
-    return bridgeWorker?.getStatus() ?? { ready: false, card: '' }
   })
 
   // Cards: scan res/cards/ and return card info list
@@ -407,11 +351,6 @@ function setupIpcHandlers(): void {
 
     mainLogger.log(`cards:list → cardsDir=${cardsDir}, found ${cards.length} card(s)`)
     return cards
-  })
-
-  // Chat history: return all cached messages
-  ipcMain.handle(IPC.CHAT_GET_HISTORY, () => {
-    return messageHistory
   })
 
   // Open or focus the history window
@@ -499,25 +438,32 @@ function launchMainApp(): void {
   setupTray()
 
   const settings = getSettings()
-
-  bridgeWorker = new BridgeWorker({
-    ...DEFAULT_BRIDGE_CONFIG,
-    ...settings.openclaw,
-    sessionKey: settings.openclaw.sessionKey || DEFAULT_BRIDGE_CONFIG.sessionKey,
+  const dbPath = path.join(app.getPath('userData'), 'soul-link.db')
+  agent = new SoulLinkAgent({
+    baseUrl: settings.cpa.baseUrl,
+    apiKey: settings.cpa.apiKey,
+    model: settings.cpa.model,
+    cardName: settings.character.cardName,
+    dbPath,
+    resBase: process.env.SOUL_LINK_RES_BASE!,
+    maxTotalTokens: 8000,
+    systemPromptBudget: 2000,
+    outputReserve: 500,
   })
-  bridgeWorker.setMainWindow(petWindow)
-  bridgeWorker.onMessage = (msg) => {
-    pushHistory({ role: 'assistant', text: msg.text, timestamp: Date.now() })
-  }
+  agent.initialize().then(() => {
+    agentReady = true
+    if (petWindow && !petWindow.isDestroyed()) {
+      petWindow.webContents.send(IPC.AGENT_READY, { ready: true, character: settings.character.cardName })
+    }
+  }).catch((err: Error) => {
+    mainLogger.error('Agent initialization failed:', err.message)
+  })
 
   companion = new CompanionScheduler(settings.companion)
   companion.setWindow(petWindow)
+  // TODO: wire companion nudge to agent once scheduler supports onNudge callback.
   if (settings.companion.enabled) {
     companion.start()
-  }
-
-  if (settings.openclaw.authToken) {
-    void bridgeWorker.start()
   }
 }
 
@@ -553,7 +499,7 @@ app.whenReady().then(async () => {
 
 app.on('window-all-closed', () => {
   companion?.stop()
-  bridgeWorker?.destroy()
+  agent?.dispose()
   if (process.platform !== 'darwin') {
     app.quit()
   }

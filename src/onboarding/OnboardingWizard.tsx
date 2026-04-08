@@ -16,8 +16,9 @@ export function OnboardingWizard(): React.ReactElement {
 
   // Apply default theme on mount
   useEffect(() => { applyTheme('warm-pink') }, [])
-  const [gatewayWsUrl, setGatewayWsUrl] = useState('ws://localhost:18789/')
-  const [authToken, setAuthToken] = useState('')
+  const [baseUrl, setBaseUrl] = useState('')
+  const [apiKey, setApiKey] = useState('')
+  const [model, setModel] = useState('MiniMax-M2')
   const [selectedCard, setSelectedCard] = useState('baiyuan')
   const [companionEnabled, setCompanionEnabled] = useState(false)
   const [idleMinutes, setIdleMinutes] = useState(30)
@@ -27,7 +28,8 @@ export function OnboardingWizard(): React.ReactElement {
 
   async function handleFinish() {
     await window.electronAPI?.invoke('settings:set', {
-      openclaw: { gatewayWsUrl, authToken, defaultCard: selectedCard, sessionKey: 'dyberpet-default' },
+      cpa: { baseUrl, apiKey, model },
+      character: { cardName: selectedCard },
       companion: { enabled: companionEnabled, idleMinutes },
       pet: { character: selectedCard },
       ui: { language, theme },
@@ -56,10 +58,12 @@ export function OnboardingWizard(): React.ReactElement {
         )}
         {step === 1 && (
           <ConnectionStep
-            gatewayWsUrl={gatewayWsUrl}
-            authToken={authToken}
-            onGatewayChange={setGatewayWsUrl}
-            onTokenChange={setAuthToken}
+            baseUrl={baseUrl}
+            apiKey={apiKey}
+            model={model}
+            onBaseUrlChange={setBaseUrl}
+            onApiKeyChange={setApiKey}
+            onModelChange={setModel}
             onNext={next}
             onBack={back}
           />

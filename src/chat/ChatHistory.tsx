@@ -17,15 +17,16 @@ export function ChatHistory(): React.ReactElement {
     const api = window.electronAPI
     if (!api) return
 
-    api.invoke('chat:get-history').then((history) => {
-      setMessages(history as ChatMessage[])
+    api.invoke('agent:get-history').then((history) => {
+      const raw = history as Array<{ id: string; role: string; content: string; created_at: string }>
+      setMessages(raw.map(msg => ({ id: msg.id, role: msg.role as 'user' | 'assistant', text: msg.content, timestamp: new Date(msg.created_at).getTime() })))
     })
 
     const handler = (...args: unknown[]) => {
-      const msg = args[0] as ChatMessage
-      setMessages(prev => [...prev, msg])
+      const raw = (args[0] as { message: { id: string; role: string; content: string; created_at: string } }).message
+      setMessages(prev => [...prev, { id: raw.id, role: raw.role as 'user' | 'assistant', text: raw.content, timestamp: new Date(raw.created_at).getTime() }])
     }
-    const off = api.on('chat:on-message', handler)
+    const off = api.on('agent:message-saved', handler)
     return () => { off() }
   }, [])
 

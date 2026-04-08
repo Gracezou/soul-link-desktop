@@ -5,15 +5,15 @@ import { ChatHistory } from './chat/ChatHistory'
 import { SettingsPanel } from './settings/SettingsPanel'
 import { OnboardingWizard } from './onboarding/OnboardingWizard'
 import { PetApp } from './pet/PetApp'
-import { useBridge } from './hooks/useBridge'
+import { useAgent } from './hooks/useAgent'
 import { applyTheme } from './themes'
 
 const page = new URLSearchParams(window.location.search).get('page')
 
-// BridgedApp calls useBridge and handles all pages that need the bridge connection.
+// AgentApp calls useAgent and handles all pages that need the agent connection.
 // ChatHistory runs in a separate window and does NOT need useBridge.
-function BridgedApp(): React.ReactElement {
-  useBridge()
+function AgentApp(): React.ReactElement {
+  useAgent()
   const { t, i18n } = useTranslation()
 
   useEffect(() => {
@@ -67,7 +67,7 @@ function BridgedApp(): React.ReactElement {
 
 function App(): React.ReactElement {
   if (page === 'history') return <ChatHistory />
-  return <BridgedApp />
+  return <AgentApp />
 }
 
 export default App

@@ -31,8 +31,6 @@ interface ChatBubbleFeedbackProps {
   onDismiss?: () => void
 }
 
-const MAX_OOC_RETRIES = 2
-
 export function ChatBubbleFeedback(_props: ChatBubbleFeedbackProps): React.ReactElement | null {
   const [phase, setPhase] = useState<Phase>('idle')
   const [fullText, setFullText] = useState('')
@@ -42,9 +40,8 @@ export function ChatBubbleFeedback(_props: ChatBubbleFeedbackProps): React.React
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const typewriterTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const typewriterIndex = useRef(0)
-  const currentRunId = useRef('')
+  const currentMessageId = useRef('')
   const phaseRef = useRef<Phase>('idle')
-  const oocRetryCount = useRef(0)
   const fullTextRef = useRef('')
   const updatePlacement = useCallback(() => {
     const margin = 24
@@ -108,10 +105,10 @@ export function ChatBubbleFeedback(_props: ChatBubbleFeedbackProps): React.React
     const api = window.electronAPI
     if (!api) return
 
-    const onAck = (data: { runId: string }) => {
-      console.log('[Bubble] onAck', data.runId)
+    const onWaiting = (data: { messageId: string }) => {
+      console.log('[Bubble] onWaiting', data.messageId)
       updatePlacement()
-      currentRunId.current = data.runId
+      currentMessageId.current = data.messageId
       phaseRef.current = 'waiting'
       setPhase('waiting')
       setFullText('')
@@ -120,27 +117,26 @@ export function ChatBubbleFeedback(_props: ChatBubbleFeedbackProps): React.React
       typewriterIndex.current = 0
       clearDismissTimer()
       clearTypewriter()
-      oocRetryCount.current = 0
     }
 
-    const onDelta = (data: { runId: string; text: string }) => {
+    const onDelta = (data: { messageId: string; delta: string }) => {
       updatePlacement()
-      if (currentRunId.current && data.runId !== currentRunId.current) {
+      if (currentMessageId.current && data.messageId !== currentMessageId.current) {
         if (phaseRef.current === 'idle' || phaseRef.current === 'displayed') {
           // New message started without ACK — reset for new run
-          console.log('[Bubble] onDelta: new run detected, resetting from', currentRunId.current, 'to', data.runId)
-          currentRunId.current = ''
+          console.log('[Bubble] onDelta: new run detected, resetting from', currentMessageId.current, 'to', data.messageId)
+          currentMessageId.current = ''
           typewriterIndex.current = 0
           clearTypewriter()
           clearDismissTimer()
         } else {
-          console.log('[Bubble] onDelta: runId mismatch, dropping (active run:', currentRunId.current, 'got:', data.runId, ')')
+          console.log('[Bubble] onDelta: runId mismatch, dropping (active run:', currentMessageId.current, 'got:', data.messageId, ')')
           return
         }
       }
-      if (!currentRunId.current) currentRunId.current = data.runId
-      console.log('[Bubble] onDelta', data.runId, 'text length:', data.text.length)
-      const cleanDelta = stripPartialTag(data.text)
+      if (!currentMessageId.current) currentMessageId.current = data.messageId
+      console.log('[Bubble] onDelta', data.messageId, 'text length:', data.delta.length)
+      const cleanDelta = stripPartialTag(data.delta)
       fullTextRef.current = cleanDelta
       setFullText(cleanDelta)
       if (phaseRef.current === 'waiting') {
@@ -151,28 +147,28 @@ export function ChatBubbleFeedback(_props: ChatBubbleFeedbackProps): React.React
         setPhase('streaming')
       }
       // Kick typewriter if it has caught up
-      if (typewriterIndex.current < data.text.length && !typewriterTimer.current) {
+      if (typewriterIndex.current < data.delta.length && !typewriterTimer.current) {
         scheduleTypewriter()
       }
     }
 
-    const onFinal = (data: { runId: string; text: string }) => {
+    const onFinal = (data: { messageId: string; text: string }) => {
       updatePlacement()
-      if (currentRunId.current && data.runId !== currentRunId.current) {
+      if (currentMessageId.current && data.messageId !== currentMessageId.current) {
         if (phaseRef.current === 'idle' || phaseRef.current === 'displayed') {
           // New message started without ACK — reset for new run
-          console.log('[Bubble] onFinal: new run detected, resetting from', currentRunId.current, 'to', data.runId)
-          currentRunId.current = ''
+          console.log('[Bubble] onFinal: new run detected, resetting from', currentMessageId.current, 'to', data.messageId)
+          currentMessageId.current = ''
           typewriterIndex.current = 0
           clearTypewriter()
           clearDismissTimer()
         } else {
-          console.log('[Bubble] onFinal: runId mismatch, dropping (active run:', currentRunId.current, 'got:', data.runId, ')')
+          console.log('[Bubble] onFinal: runId mismatch, dropping (active run:', currentMessageId.current, 'got:', data.messageId, ')')
           return
         }
       }
-      if (!currentRunId.current) currentRunId.current = data.runId
-      console.log('[Bubble] onFinal', data.runId, 'text length:', data.text.length)
+      if (!currentMessageId.current) currentMessageId.current = data.messageId
+      console.log('[Bubble] onFinal', data.messageId, 'text length:', data.text.length)
       const filterResult = processResponse(data.text)
 
       // System message — suppress entirely
@@ -181,31 +177,10 @@ export function ChatBubbleFeedback(_props: ChatBubbleFeedbackProps): React.React
         if (phaseRef.current === 'waiting' || phaseRef.current === 'streaming') {
           phaseRef.current = 'idle'
           setPhase('idle')
-          currentRunId.current = ''
+          currentMessageId.current = ''
         }
         return
       }
-
-      // OOC detected — trigger retry
-      if (filterResult.oocDetected && oocRetryCount.current < MAX_OOC_RETRIES) {
-        oocRetryCount.current += 1
-        console.warn(`[Bubble] OOC detected (attempt ${oocRetryCount.current}/${MAX_OOC_RETRIES}), sending /rp retry`)
-        phaseRef.current = 'waiting'
-        setPhase('waiting')
-        setDisplayText('')
-        fullTextRef.current = ''
-        typewriterIndex.current = 0
-        window.electronAPI?.invoke('bridge:command', { command: '/rp retry' }).catch((err: unknown) => {
-          console.error('[Bubble] OOC retry failed:', err)
-        })
-        return
-      }
-
-      // Reset OOC counter on valid response
-      if (filterResult.oocDetected) {
-        console.warn(`[Bubble] OOC after ${MAX_OOC_RETRIES} retries, displaying anyway`)
-      }
-      oocRetryCount.current = 0
 
       // Drive animation from extracted emotion
       if (filterResult.emotion) {
@@ -228,11 +203,11 @@ export function ChatBubbleFeedback(_props: ChatBubbleFeedbackProps): React.React
       }
     }
 
-    const offAck = api.on('chat:ack', (...args: unknown[]) => onAck(args[0] as { runId: string }))
-    const offDelta = api.on('chat:delta', (...args: unknown[]) => onDelta(args[0] as { runId: string; text: string }))
-    const offFinal = api.on('chat:final', (...args: unknown[]) => onFinal(args[0] as { runId: string; text: string }))
+    const offWaiting = api.on('agent:waiting', (...args: unknown[]) => onWaiting(args[0] as { messageId: string }))
+    const offDelta = api.on('agent:delta', (...args: unknown[]) => onDelta(args[0] as { messageId: string; delta: string }))
+    const offFinal = api.on('agent:final', (...args: unknown[]) => onFinal(args[0] as { messageId: string; text: string }))
 
-    return () => { offAck(); offDelta(); offFinal() }
+    return () => { offWaiting(); offDelta(); offFinal() }
   }, [clearDismissTimer, clearTypewriter, scheduleTypewriter, startDismissTimer, updatePlacement])
 
   const handleMouseEnter = useCallback(() => {

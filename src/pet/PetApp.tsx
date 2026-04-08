@@ -129,7 +129,7 @@ export function PetApp(): React.ReactElement {
   }, [])
 
   const handleSend = useCallback((message: string) => {
-    void window.electronAPI?.invoke('bridge:send', { message })
+    window.electronAPI?.send('agent:send', { message })
   }, [])
 
   return (

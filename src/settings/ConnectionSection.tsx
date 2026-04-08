@@ -8,24 +8,24 @@ interface Props {
 
 export function ConnectionSection({ settings }: Props): React.ReactElement {
   const { t } = useTranslation()
-  const openclaw = settings?.openclaw as Record<string, unknown> | undefined
+  const cpa = settings?.cpa as Record<string, unknown> | undefined
 
-  const [url, setUrl] = useState(String(openclaw?.gatewayWsUrl ?? 'ws://188.239.18.173:4000/'))
-  const [token, setToken] = useState(String(openclaw?.authToken ?? ''))
-  const [sessionKey, setSessionKey] = useState(String(openclaw?.sessionKey ?? 'dyberpet-default'))
+  const [baseUrl, setBaseUrl] = useState(String(cpa?.baseUrl ?? ''))
+  const [apiKey, setApiKey] = useState(String(cpa?.apiKey ?? ''))
+  const [model, setModel] = useState(String(cpa?.model ?? 'MiniMax-M2'))
   const [testResult, setTestResult] = useState<string | null>(null)
 
   useEffect(() => {
-    if (openclaw) {
-      setUrl(String(openclaw.gatewayWsUrl ?? ''))
-      setToken(String(openclaw.authToken ?? ''))
-      setSessionKey(String(openclaw.sessionKey ?? ''))
+    if (cpa) {
+      setBaseUrl(String(cpa.baseUrl ?? ''))
+      setApiKey(String(cpa.apiKey ?? ''))
+      setModel(String(cpa.model ?? 'MiniMax-M2'))
     }
   }, [settings])
 
   async function handleSave(): Promise<void> {
     await window.electronAPI?.invoke('settings:set', {
-      openclaw: { gatewayWsUrl: url, authToken: token, sessionKey },
+      cpa: { baseUrl, apiKey, model },
     })
     setTestResult(t('settings.connection.saved'))
     setTimeout(() => setTestResult(null), 2000)
@@ -34,10 +34,10 @@ export function ConnectionSection({ settings }: Props): React.ReactElement {
   async function handleTest(): Promise<void> {
     setTestResult(t('common.testing'))
     try {
-      const result = await window.electronAPI?.invoke('bridge:test-connection', {
-        gatewayWsUrl: url, authToken: token,
-      })
-      setTestResult(result ? t('settings.connection.testSuccess') : t('settings.connection.testFailed'))
+      const result = await window.electronAPI?.invoke('agent:test-connection', {
+        baseUrl, apiKey, model,
+      }) as { success: boolean; error?: string } | undefined
+      setTestResult(result?.success ? t('settings.connection.testSuccess') : (result?.error ?? t('settings.connection.testFailed')))
     } catch {
       setTestResult(t('settings.connection.testFailed'))
     }
@@ -49,38 +49,38 @@ export function ConnectionSection({ settings }: Props): React.ReactElement {
       <h3 className={styles.sectionTitle}>{t('settings.connection.title')}</h3>
 
       <label className={styles.field}>
-        <span className={styles.label}>{t('settings.connection.gatewayLabel')}</span>
+        <span className={styles.label}>API 地址</span>
         <input
           className={styles.input}
-          value={url}
-          onChange={e => setUrl(e.target.value)}
-          placeholder="ws://..."
+          value={baseUrl}
+          onChange={e => setBaseUrl(e.target.value)}
+          placeholder="https://api.example.com"
         />
       </label>
 
       <label className={styles.field}>
-        <span className={styles.label}>{t('settings.connection.tokenLabel')}</span>
+        <span className={styles.label}>API 密钥</span>
         <input
           className={styles.input}
           type="password"
-          value={token}
-          onChange={e => setToken(e.target.value)}
+          value={apiKey}
+          onChange={e => setApiKey(e.target.value)}
           placeholder={t('settings.connection.tokenPlaceholder')}
         />
       </label>
 
       <label className={styles.field}>
-        <span className={styles.label}>{t('settings.connection.sessionKeyLabel')}</span>
+        <span className={styles.label}>模型名称</span>
         <input
           className={styles.input}
-          value={sessionKey}
-          onChange={e => setSessionKey(e.target.value)}
-          placeholder="dyberpet-default"
+          value={model}
+          onChange={e => setModel(e.target.value)}
+          placeholder="MiniMax-M2"
         />
       </label>
 
       <div className={styles.actions}>
-        <button className={styles.btnSecondary} onClick={() => void handleTest()}>
+        <button className={styles.btnSecondary} onClick={() => void handleTest()} disabled={!baseUrl || !apiKey || !model}>
           {t('settings.connection.testBtn')}
         </button>
         <button className={styles.btnPrimary} onClick={() => void handleSave()}>

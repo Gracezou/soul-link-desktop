@@ -4,18 +4,16 @@ import { usePetStore } from '../stores/petStore'
 import { parseResponse } from '../utils/responseParser'
 import { mapEmotionToAnimation } from '../utils/emotionMapper'
 
-// Inline bridge message types — do not import from electron/ (cross-process boundary)
-interface BridgeMessage {
-  runId: string
+interface AgentMessage {
+  messageId: string
   text: string
 }
 
-interface BridgeSessionStatus {
+interface AgentReadyStatus {
   ready: boolean
-  card: string
+  character: string
 }
 
-// Access the electronAPI exposed via preload
 declare global {
   interface Window {
     electronAPI: {
@@ -27,7 +25,7 @@ declare global {
   }
 }
 
-export function useBridge(): void {
+export function useAgent(): void {
   const addAssistantMessage = useChatStore(s => s.addAssistantMessage)
   const setConnected = useChatStore(s => s.setConnected)
   const setSessionStatus = useChatStore(s => s.setSessionStatus)
@@ -38,41 +36,32 @@ export function useBridge(): void {
     const api = window.electronAPI
     if (!api) return
 
-    // Query current session status on mount — handles case where window opens after session is ready
-    void api.invoke('bridge:get-session').then((status) => {
-      const s = status as BridgeSessionStatus
-      if (s?.ready) setSessionStatus(s.ready, s.card)
+    void api.invoke('agent:get-status').then((status) => {
+      const s = status as AgentReadyStatus
+      if (s?.ready) {
+        setSessionStatus(s.ready, s.character)
+        setConnected(true)
+      }
     })
 
-    const offMessage = api.on('bridge:message', (...args: unknown[]) => {
-      const msg = args[0] as BridgeMessage
+    const offReady = api.on('agent:ready', (...args: unknown[]) => {
+      const status = args[0] as AgentReadyStatus
+      setSessionStatus(status.ready, status.character)
+      if (status.ready) setConnected(true)
+    })
+
+    const offFinal = api.on('agent:final', (...args: unknown[]) => {
+      const msg = args[0] as AgentMessage
       addAssistantMessage(msg.text)
-      // Map response emotions to pet animation
       const parsed = parseResponse(msg.text)
       const cmd = mapEmotionToAnimation(parsed)
       setAnimationFromEmotion(parsed.emotions[0] ?? 'talk')
       addFV(cmd.fvDelta)
     })
 
-    const offSession = api.on('bridge:session', (...args: unknown[]) => {
-      const status = args[0] as BridgeSessionStatus
-      setSessionStatus(status.ready, status.card)
-    })
-
-    const offConnected = api.on('bridge:connected', () => {
-      setConnected(true)
-    })
-
-    const offDisconnected = api.on('bridge:disconnected', () => {
-      setConnected(false)
-      setSessionStatus(false, '')
-    })
-
     return () => {
-      offMessage()
-      offSession()
-      offConnected()
-      offDisconnected()
+      offReady()
+      offFinal()
     }
   }, [addAssistantMessage, setConnected, setSessionStatus, setAnimationFromEmotion, addFV])
 }

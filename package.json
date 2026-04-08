@@ -27,8 +27,8 @@
     "@types/node": "^20.0.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "@types/sql.js": "^1.4.11",
     "@types/uuid": "^10.0.0",
-    "@types/ws": "^8.0.0",
     "@vitejs/plugin-react": "^4.0.0",
     "concurrently": "^8.0.0",
     "electron": "^29.0.0",
@@ -46,8 +46,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-i18next": "^16.5.8",
+    "sql.js": "^1.14.1",
     "uuid": "^13.0.0",
-    "ws": "^8.0.0",
     "zustand": "^4.0.0"
   },
   "jest": {

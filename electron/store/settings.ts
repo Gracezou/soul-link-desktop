@@ -1,14 +1,13 @@
 import Store from 'electron-store'
 
-interface SoulLinkSettings {
-  openclaw: {
-    gatewayWsUrl: string
-    authToken: string
-    sessionKey: string
-    defaultCard: string
-    cardImportUrl: string
-    timeoutSeconds: number
-    reconnectIntervalMs: number
+export interface SoulLinkSettings {
+  cpa: {
+    baseUrl: string
+    apiKey: string
+    model: string
+  }
+  character: {
+    cardName: string
   }
   companion: {
     enabled: boolean
@@ -32,14 +31,13 @@ interface SoulLinkSettings {
 }
 
 const defaults: SoulLinkSettings = {
-  openclaw: {
-    gatewayWsUrl: 'ws://188.239.18.173:4000/',
-    authToken: '',
-    sessionKey: 'dyberpet-default',
-    defaultCard: 'baiyuan',
-    cardImportUrl: 'http://188.239.18.173:5173/baiyuan/baiyuan_card.png',
-    timeoutSeconds: 30,
-    reconnectIntervalMs: 5000,
+  cpa: {
+    baseUrl: '',
+    apiKey: '',
+    model: 'MiniMax-M2',
+  },
+  character: {
+    cardName: 'baiyuan',
   },
   companion: {
     enabled: false,
@@ -61,9 +59,34 @@ const defaults: SoulLinkSettings = {
   },
 }
 
+// electron-store migrations: migrate from openclaw schema (v0.1.x) to cpa schema (v0.2.0)
+type LegacySettings = Record<string, unknown> & {
+  openclaw?: {
+    authToken?: string
+    defaultCard?: string
+  }
+}
+
 const store = new Store<SoulLinkSettings>({
   defaults,
   name: 'settings',
+  migrations: {
+    '0.2.0': (migratingStore: any) => {
+      const raw = migratingStore.store as LegacySettings
+      if (raw.openclaw && typeof raw.openclaw === 'object') {
+        const legacy = raw.openclaw
+        migratingStore.set('cpa', {
+          baseUrl: '',
+          apiKey: typeof legacy.authToken === 'string' ? legacy.authToken : '',
+          model: 'MiniMax-M2',
+        })
+        migratingStore.set('character', {
+          cardName: typeof legacy.defaultCard === 'string' ? legacy.defaultCard : 'baiyuan',
+        })
+        migratingStore.delete('openclaw' as keyof SoulLinkSettings)
+      }
+    },
+  } as any,
 })
 
 export function getSettings(): SoulLinkSettings {
@@ -76,13 +99,13 @@ export function updateSettings(partial: Partial<SoulLinkSettings>): void {
   }
 }
 
-export function getOpenClawConfig() {
-  return store.get('openclaw')
+export function getCpaConfig(): SoulLinkSettings['cpa'] {
+  return store.get('cpa')
 }
 
-export function updateOpenClawConfig(partial: Partial<SoulLinkSettings['openclaw']>): void {
-  const current = store.get('openclaw')
-  store.set('openclaw', { ...current, ...partial })
+export function updateCpaConfig(partial: Partial<SoulLinkSettings['cpa']>): void {
+  const current = store.get('cpa')
+  store.set('cpa', { ...current, ...partial })
 }
 
 export { store }

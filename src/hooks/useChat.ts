@@ -7,10 +7,10 @@ export function useChat() {
   const sessionReady = useChatStore(s => s.sessionReady)
   const addUserMessage = useChatStore(s => s.addUserMessage)
 
-  async function sendMessage(text: string): Promise<void> {
+  function sendMessage(text: string): void {
     if (!text.trim() || !sessionReady) return
     addUserMessage(text)
-    await window.electronAPI.invoke('bridge:send', { message: text })
+    window.electronAPI.send('agent:send', { message: text })
   }
 
   return { messages, isLoading, isConnected, sessionReady, sendMessage }
