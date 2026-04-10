@@ -117,7 +117,7 @@
     "about": {
       "title": "关于",
       "versionLabel": "版本",
-      "version": "Soul Link Desktop v0.1.0",
+      "version": "Soul Link Desktop v{{version}}",
       "techStackLabel": "技术栈",
       "techStack": "Electron · React · TypeScript · OpenClaw",
       "resetTitle": "重置",

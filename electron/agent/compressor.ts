@@ -1,8 +1,10 @@
+import { createLogger } from '../logger'
 import { LlmClient } from './llm-client'
 import type { AgentConfig, ChatMessage } from './types'
 
 export class Compressor {
   private readonly llmClient: LlmClient
+  private readonly log = createLogger('Compressor')
 
   constructor(config: Pick<AgentConfig, 'baseUrl' | 'apiKey' | 'model'>) {
     this.llmClient = new LlmClient(config)
@@ -10,6 +12,7 @@ export class Compressor {
 
   async compress(messages: ChatMessage[], existingSummary?: string): Promise<string> {
     if (messages.length === 0) return existingSummary ?? ''
+    this.log.info('compress', { messageCount: messages.length, hasExisting: !!existingSummary })
 
     const conversationText = messages
       .map(m => `${m.role === 'user' ? '用户' : '角色'}: ${m.content}`)

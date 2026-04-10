@@ -8,9 +8,17 @@
     "dev:vite": "vite",
     "dev:tsc": "tsc -p tsconfig.node.json --watch --preserveWatchOutput",
     "dev:electron": "wait-on http://localhost:5173 dist-electron/main.js && electronmon .",
-    "build": "tsc -p tsconfig.node.json && vite build && electron-builder",
+    "build": "npm run build:renderer && npm run build:main && npm run build:package",
+    "build:renderer": "vite build",
+    "build:main": "tsc -p tsconfig.node.json",
+    "build:package": "electron-builder",
+    "build:win": "npm run build:renderer && npm run build:main && electron-builder --win",
+    "build:mac": "npm run build:renderer && npm run build:main && electron-builder --mac",
     "preview": "vite preview",
-    "test": "jest"
+    "test": "jest tests/unit/",
+    "test:unit": "jest tests/unit/",
+    "test:integration": "jest tests/integration/ --runInBand",
+    "test:all": "jest --runInBand"
   },
   "electronmon": {
     "patterns": [
@@ -57,22 +65,10 @@
       "**/tests/**/*.test.ts"
     ],
     "moduleNameMapper": {
-      "electron": "<rootDir>/tests/__mocks__/electron.ts"
-    }
-  },
-  "build": {
-    "appId": "com.soullink.desktop",
-    "productName": "Soul Link Desktop",
-    "files": [
-      "dist/**/*",
-      "dist-electron/**/*",
-      "res/**/*"
-    ],
-    "win": {
-      "target": "nsis"
+      "^electron$": "<rootDir>/tests/__mocks__/electron.ts"
     },
-    "mac": {
-      "target": "dmg"
+    "transform": {
+      "^.+\\.tsx?$": ["ts-jest", { "tsconfig": "tsconfig.test.json" }]
     }
   }
 }

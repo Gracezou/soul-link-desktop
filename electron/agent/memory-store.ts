@@ -1,6 +1,7 @@
 import crypto from 'crypto'
 import fs from 'fs'
 import type initSqlJs from 'sql.js'
+import { createLogger } from '../logger'
 import { LlmClient } from './llm-client'
 import type { AgentConfig } from './types'
 
@@ -27,6 +28,7 @@ export class MemoryStore {
   private db: initSqlJs.Database | null = null
   private readonly dbPath: string
   private readonly llmClient: LlmClient
+  private readonly log = createLogger('MemoryStore')
 
   constructor(config: Pick<AgentConfig, 'baseUrl' | 'apiKey' | 'model' | 'dbPath'>) {
     this.dbPath = config.dbPath
@@ -81,6 +83,7 @@ export class MemoryStore {
   async extractAndSave(characterId: string, userMessage: string, assistantMessage: string): Promise<void> {
     const shouldExtract = /我|我的|my|mine/i.test(userMessage) || userMessage.length > 20
     if (!shouldExtract) return
+    this.log.info('extractAndSave', { characterId, userMessageLength: userMessage.length })
 
     const extractionPrompt = `从以下对话中提取用户的个人信息。返回JSON数组，每项包含 category, key, value 字段。
 category 可选值: user_info, preference, event, relationship, mood
@@ -144,6 +147,7 @@ category 可选值: user_info, preference, event, relationship, mood
 
   private upsertMemory(characterId: string, category: string, key: string, value: string): void {
     if (!this.db) return
+    this.log.info('memory:upsert', { characterId, category, key })
     const now = Date.now()
 
     this.db.run(

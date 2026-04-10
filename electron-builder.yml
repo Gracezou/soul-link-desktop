@@ -3,25 +3,61 @@ productName: Soul Link Desktop
 copyright: Copyright © 2026
 
 directories:
-  output: release
+  output: release/${version}
+  buildResources: build
 
 files:
-  - dist/**/*
   - dist-electron/**/*
-  - res/**/*
+  - dist/**/*
+  - package.json
+
+extraResources:
+  - from: res/
+    to: res/
+    filter:
+      - "**/*"
+
+asar: true
+asarUnpack:
+  - "**/*.node"
+  - "**/sql.js/**"
+
+mac:
+  category: public.app-category.entertainment
+  darkModeSupport: true
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  # icon: res/icons/tray.png  # MVP: skip — icon file not ready yet
+
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+  window:
+    width: 540
+    height: 380
 
 win:
   target:
     - target: nsis
       arch: [x64]
-  icon: res/icons/tray.png
-
-mac:
-  target:
-    - target: dmg
-      arch: [x64, arm64]
-  icon: res/icons/tray.png
+  # icon: res/icons/tray.png  # MVP: skip — icon file not ready yet
 
 nsis:
   oneClick: false
+  perMachine: false
   allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: "Soul Link Desktop"
+  # installerIcon: build/installer.ico       # MVP: skip
+  # uninstallerIcon: build/uninstaller.ico   # MVP: skip
+  # installerHeaderIcon: build/installer.ico # MVP: skip

@@ -1,3 +1,4 @@
+import { createApiLogger } from '../logger'
 import type { AgentConfig } from './types'
 
 type ChatMessage = { role: string; content: string }
@@ -23,6 +24,7 @@ export class LlmClient {
   private readonly baseUrl: string
   private readonly apiKey: string
   private readonly model: string
+  private readonly apiLog = createApiLogger()
 
   constructor(config: Pick<AgentConfig, 'baseUrl' | 'apiKey' | 'model'>) {
     this.baseUrl = config.baseUrl.replace(/\/+$/, '')
@@ -56,6 +58,9 @@ export class LlmClient {
     messages: ChatMessage[],
     options?: { temperature?: number; max_tokens?: number }
   ): Promise<string> {
+    const startTime = Date.now()
+    this.apiLog.request({ purpose: 'completion', model: this.model, messageCount: messages.length })
+
     const body: Record<string, unknown> = {
       model: this.model,
       messages,
@@ -67,10 +72,13 @@ export class LlmClient {
     const response = await this.request('/chat/completions', body)
     if (!response.ok) {
       const snippet = await this.readResponseSnippet(response)
+      this.apiLog.response({ purpose: 'completion', latencyMs: Date.now() - startTime, status: response.status, error: snippet })
       throw new Error(`HTTP ${response.status}: ${snippet}`)
     }
     const payload = await response.json() as { choices?: Array<{ message?: { content?: string } }> }
-    return payload?.choices?.[0]?.message?.content ?? ''
+    const result = payload?.choices?.[0]?.message?.content ?? ''
+    this.apiLog.response({ purpose: 'completion', latencyMs: Date.now() - startTime, status: response.status, responseLength: result.length })
+    return result
   }
 
   async testConnection(): Promise<{ success: boolean; error?: string }> {
@@ -119,6 +127,9 @@ export class LlmClient {
   }
 
   private async streamChatOnce(messages: ChatMessage[], callbacks: StreamCallbacks): Promise<void> {
+    const startTime = Date.now()
+    this.apiLog.request({ purpose: 'chat', model: this.model, messageCount: messages.length })
+
     const response = await this.request('/chat/completions', {
       model: this.model,
       messages,
@@ -127,11 +138,13 @@ export class LlmClient {
 
     if (!response.ok) {
       const snippet = await this.readResponseSnippet(response)
+      this.apiLog.response({ purpose: 'chat', latencyMs: Date.now() - startTime, status: response.status, error: snippet })
       callbacks.onError(`HTTP ${response.status}: ${snippet}`)
       return
     }
 
     if (!response.body) {
+      this.apiLog.response({ purpose: 'chat', latencyMs: Date.now() - startTime, status: response.status, error: 'empty body' })
       callbacks.onError('Response body is empty')
       return
     }
@@ -140,6 +153,7 @@ export class LlmClient {
     const decoder = new TextDecoder()
     let buffer = ''
     let fullText = ''
+    let deltaCount = 0
 
     while (true) {
       const { done, value } = await reader.read()
@@ -159,6 +173,7 @@ export class LlmClient {
 
         const data = line.slice(6).trim()
         if (data === '[DONE]') {
+          this.apiLog.streaming({ deltaCount, totalLength: fullText.length, latencyMs: Date.now() - startTime })
           callbacks.onComplete(fullText)
           return
         }
@@ -173,6 +188,7 @@ export class LlmClient {
         const delta = parsed.choices?.[0]?.delta?.content
         if (typeof delta === 'string' && delta.length > 0) {
           fullText += delta
+          deltaCount += 1
           callbacks.onDelta(delta)
         }
       }
@@ -195,6 +211,7 @@ export class LlmClient {
       }
     }
 
+    this.apiLog.streaming({ deltaCount, totalLength: fullText.length, latencyMs: Date.now() - startTime })
     callbacks.onComplete(fullText)
   }
 

@@ -35,6 +35,7 @@ export const IPC = {
   // Onboarding
   ONBOARDING_COMPLETE: 'onboarding:complete',
   APP_RELAUNCH: 'app:relaunch',
+  APP_GET_VERSION: 'app:get-version',
 
   // Cards
   CARDS_LIST: 'cards:list',

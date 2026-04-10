@@ -1,10 +1,17 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import styles from './settings.module.css'
 
 export function AboutSection(): React.ReactElement {
   const { t } = useTranslation()
   const [resetting, setResetting] = useState(false)
+  const [version, setVersion] = useState<string | null>(null)
+
+  useEffect(() => {
+    window.electronAPI?.invoke('app:get-version')
+      .then((v) => setVersion(typeof v === 'string' ? v : null))
+      .catch(() => setVersion(null))
+  }, [])
 
   async function handleResetOnboarding(): Promise<void> {
     setResetting(true)
@@ -20,7 +27,7 @@ export function AboutSection(): React.ReactElement {
 
       <div className={styles.field}>
         <span className={styles.label}>{t('settings.about.versionLabel')}</span>
-        <span className={styles.value}>{t('settings.about.version')}</span>
+        <span className={styles.value}>{version !== null ? t('settings.about.version', { version }) : 'Soul Link Desktop'}</span>
       </div>
 
       <div className={styles.field}>

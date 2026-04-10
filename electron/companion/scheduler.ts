@@ -1,5 +1,6 @@
 import type { BrowserWindow } from 'electron'
 import { IPC } from '../ipc'
+import { createLogger } from '../logger'
 
 type CompanionMode = 'balanced' | 'checkin' | 'question' | 'report'
 
@@ -20,6 +21,7 @@ export class CompanionScheduler {
   private timer: ReturnType<typeof setInterval> | null = null
   private config: CompanionConfig
   private mainWindow: BrowserWindow | null = null
+  private readonly log = createLogger('Companion')
 
   constructor(config: CompanionConfig) {
     this.config = config
@@ -45,14 +47,14 @@ export class CompanionScheduler {
       this.triggerNudge()
     }, intervalMs)
 
-    console.log(`[Companion] Scheduler started (every ${this.config.idleMinutes} min, mode: ${this.config.mode})`)
+    this.log.info('scheduler:start', { idleMinutes: this.config.idleMinutes, mode: this.config.mode })
   }
 
   stop(): void {
     if (this.timer) {
       clearInterval(this.timer)
       this.timer = null
-      console.log('[Companion] Scheduler stopped')
+      this.log.info('scheduler:stop')
     }
   }
 
@@ -60,7 +62,7 @@ export class CompanionScheduler {
     const messages = NUDGE_MESSAGES[this.config.mode]
     const message = messages[Math.floor(Math.random() * messages.length)]
 
-    console.log('[Companion] Nudging with:', message)
+    this.log.info('nudge', { mode: this.config.mode, message })
 
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
       this.mainWindow.webContents.send(IPC.COMPANION_NUDGE, { message })

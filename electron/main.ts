@@ -1,4 +1,5 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, protocol, net } from 'electron'
+import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, protocol, net, session } from 'electron'
+import { pathToFileURL } from 'node:url'
 
 // Must be called before app is ready
 protocol.registerSchemesAsPrivileged([
@@ -31,6 +32,7 @@ import { createSettingsWindow } from './windows/settingsWindow'
 import { createOnboardingWindow } from './windows/onboardingWindow'
 import { getSettings, updateSettings } from './store/settings'
 import { CompanionScheduler } from './companion/scheduler'
+import { getResourcePath, getDBPath } from './utils/paths'
 
 // Set once at startup; all resource consumers read this instead of branching on isDev
 process.env.SOUL_LINK_RES_BASE = app.isPackaged
@@ -75,9 +77,7 @@ function createSettingsWindowInstance(): void {
 
 function setupTray(): void {
   try {
-    const iconPath = path.join(
-      path.join(process.env.SOUL_LINK_RES_BASE!, 'icons/tray.png')
-    )
+    const iconPath = getResourcePath('icons', 'tray.png')
     const icon = nativeImage.createFromPath(iconPath)
     tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon)
     tray.setToolTip('Soul Link Desktop')
@@ -275,6 +275,7 @@ function setupIpcHandlers(): void {
     app.relaunch()
     app.quit()
   })
+  ipcMain.handle(IPC.APP_GET_VERSION, () => app.getVersion())
 
   // Companion
   ipcMain.handle(IPC.COMPANION_STATUS, async () => {
@@ -283,7 +284,7 @@ function setupIpcHandlers(): void {
 
   // Cards: scan res/cards/ and return card info list
   ipcMain.handle(IPC.CARDS_LIST, () => {
-    const cardsDir = path.join(process.env.SOUL_LINK_RES_BASE!, 'cards')
+    const cardsDir = getResourcePath('cards')
 
     let files: string[]
     try {
@@ -438,7 +439,7 @@ function launchMainApp(): void {
   setupTray()
 
   const settings = getSettings()
-  const dbPath = path.join(app.getPath('userData'), 'soul-link.db')
+  const dbPath = getDBPath()
   agent = new SoulLinkAgent({
     baseUrl: settings.cpa.baseUrl,
     apiKey: settings.cpa.apiKey,
@@ -468,12 +469,33 @@ function launchMainApp(): void {
 }
 
 app.whenReady().then(async () => {
+  if (app.isPackaged) {
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      const filtered = Object.fromEntries(
+        Object.entries(details.responseHeaders ?? {})
+          .filter(([k]) => k.toLowerCase() !== 'content-security-policy')
+      )
+      callback({
+        responseHeaders: {
+          ...filtered,
+          'Content-Security-Policy': [
+            "default-src 'self'",
+            "script-src 'self'",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data: file: res:",
+            "connect-src 'self' http: https:",
+          ].join('; '),
+        },
+      })
+    })
+  }
+
   // Register res:// protocol — routes res://sprites/... and res://cards/... to SOUL_LINK_RES_BASE
   protocol.handle('res', (request) => {
     const url = new URL(request.url)
     // res://sprites/baiyuan/manifest.json → hostname=sprites, pathname=/baiyuan/manifest.json
-    const filePath = path.join(process.env.SOUL_LINK_RES_BASE!, url.hostname, url.pathname)
-    return net.fetch(`file://${filePath}`)
+    const filePath = getResourcePath(url.hostname, url.pathname)
+    return net.fetch(pathToFileURL(filePath).toString())
   })
 
   setupIpcHandlers()
