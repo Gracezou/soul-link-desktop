@@ -58,7 +58,7 @@ export function ConnectionStep({
       <p className={styles.stepSubtitle}>{t('onboarding.connection.subtitle')}</p>
 
       <div className={styles.field}>
-        <label className={styles.label}>API 地址</label>
+        <label className={styles.label}>{t('onboarding.connection.baseUrlLabel')}</label>
         <input
           className={styles.input}
           type="text"
@@ -69,7 +69,7 @@ export function ConnectionStep({
       </div>
 
       <div className={styles.field}>
-        <label className={styles.label}>API 密钥</label>
+        <label className={styles.label}>{t('onboarding.connection.apiKeyLabel')}</label>
         <div className={styles.inputWrapper}>
           <input
             className={styles.input}
@@ -85,7 +85,7 @@ export function ConnectionStep({
       </div>
 
       <div className={styles.field}>
-        <label className={styles.label}>模型名称</label>
+        <label className={styles.label}>{t('onboarding.connection.modelLabel')}</label>
         <input
           className={styles.input}
           type="text"

@@ -25,7 +25,10 @@
       "testSuccess": "✓ 连接成功",
       "testFailed": "连接失败",
       "testError": "连接出错",
-      "testingBtn": "测试中…"
+      "testingBtn": "测试中…",
+      "baseUrlLabel": "API 地址",
+      "apiKeyLabel": "API 密钥",
+      "modelLabel": "模型名称"
     },
     "character": {
       "title": "选择角色",
@@ -91,7 +94,13 @@
       "testBtn": "测试连接",
       "testSuccess": "连接成功 ✓",
       "testFailed": "连接失败 ✗",
-      "saved": "已保存"
+      "saved": "已保存",
+      "baseUrlLabel": "API 地址",
+      "apiKeyLabel": "API 密钥",
+      "modelLabel": "模型名称",
+      "restartRequired": "配置已保存，需重启应用以生效",
+      "restartNow": "立即重启",
+      "restartLater": "稍后"
     },
     "character": {
       "title": "角色",

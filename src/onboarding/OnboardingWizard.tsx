@@ -10,18 +10,58 @@ const TOTAL_STEPS = 4
 
 export function OnboardingWizard(): React.ReactElement {
   const [step, setStep] = useState(0)
+  const [loading, setLoading] = useState(true)
 
   const [language, setLanguage] = useState('zh-CN')
   const [theme, setTheme] = useState('warm-pink')
-
-  // Apply default theme on mount
-  useEffect(() => { applyTheme('warm-pink') }, [])
   const [baseUrl, setBaseUrl] = useState('')
   const [apiKey, setApiKey] = useState('')
   const [model, setModel] = useState('MiniMax-M2')
   const [selectedCard, setSelectedCard] = useState('baiyuan')
   const [companionEnabled, setCompanionEnabled] = useState(false)
   const [idleMinutes, setIdleMinutes] = useState(30)
+  const [prefilledPet, setPrefilledPet] = useState<Record<string, unknown> | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 1000)
+    )
+    Promise.race([
+      window.electronAPI?.invoke('settings:get') ?? Promise.reject(new Error('no api')),
+      timeout,
+    ])
+      .then((result) => {
+        if (cancelled) return
+        const settings = result as Record<string, unknown>
+        const ui = settings?.ui as Record<string, unknown> | undefined
+        const cpa = settings?.cpa as Record<string, unknown> | undefined
+        const character = settings?.character as Record<string, unknown> | undefined
+        const companion = settings?.companion as Record<string, unknown> | undefined
+        const pet = settings?.pet as Record<string, unknown> | undefined
+
+        const loadedTheme = String(ui?.theme ?? 'warm-pink')
+        setLanguage(String(ui?.language ?? 'zh-CN'))
+        setTheme(loadedTheme)
+        applyTheme(loadedTheme)
+        setBaseUrl(String(cpa?.baseUrl ?? ''))
+        setApiKey(String(cpa?.apiKey ?? ''))
+        setModel(String(cpa?.model ?? 'MiniMax-M2'))
+        setSelectedCard(String(character?.cardName ?? 'baiyuan'))
+        setCompanionEnabled(Boolean(companion?.enabled ?? false))
+        setIdleMinutes(Number(companion?.idleMinutes ?? 30))
+        if (pet) setPrefilledPet(pet)
+      })
+      .catch(() => {
+        if (!cancelled) applyTheme('warm-pink')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const next = () => setStep(s => s + 1)
   const back = () => setStep(s => s - 1)
@@ -31,11 +71,19 @@ export function OnboardingWizard(): React.ReactElement {
       cpa: { baseUrl, apiKey, model },
       character: { cardName: selectedCard },
       companion: { enabled: companionEnabled, idleMinutes },
-      pet: { character: selectedCard },
+      pet: { ...(prefilledPet ?? {}), character: selectedCard },
       ui: { language, theme },
       onboarding: { completed: true, completedAt: new Date().toISOString() },
     })
     window.electronAPI?.send('onboarding:complete')
+  }
+
+  if (loading) {
+    return (
+      <div className={styles.overlay}>
+        <div className={styles.card}>Loading... / 加载中...</div>
+      </div>
+    )
   }
 
   return (

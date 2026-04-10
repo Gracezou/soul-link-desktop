@@ -33,6 +33,7 @@ import { createOnboardingWindow } from './windows/onboardingWindow'
 import { getSettings, updateSettings } from './store/settings'
 import { CompanionScheduler } from './companion/scheduler'
 import { getResourcePath, getDBPath } from './utils/paths'
+import { needsOnboarding } from './utils/onboardingGuard'
 
 // Set once at startup; all resource consumers read this instead of branching on isDev
 process.env.SOUL_LINK_RES_BASE = app.isPackaged
@@ -502,8 +503,7 @@ app.whenReady().then(async () => {
 
   const settings = getSettings()
 
-  if (!settings.onboarding.completed) {
-    // First run: show onboarding only, no pet window
+  if (needsOnboarding(settings)) {
     onboardingWindow = createOnboardingWindow()
     onboardingWindow.on('closed', () => {
       onboardingWindow = null

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import styles from './settings.module.css'
 
@@ -8,26 +8,36 @@ interface Props {
 
 export function ConnectionSection({ settings }: Props): React.ReactElement {
   const { t } = useTranslation()
-  const cpa = settings?.cpa as Record<string, unknown> | undefined
 
-  const [baseUrl, setBaseUrl] = useState(String(cpa?.baseUrl ?? ''))
-  const [apiKey, setApiKey] = useState(String(cpa?.apiKey ?? ''))
-  const [model, setModel] = useState(String(cpa?.model ?? 'MiniMax-M2'))
+  const [baseUrl, setBaseUrl] = useState(String((settings?.cpa as Record<string, unknown> | undefined)?.baseUrl ?? ''))
+  const [apiKey, setApiKey] = useState(String((settings?.cpa as Record<string, unknown> | undefined)?.apiKey ?? ''))
+  const [model, setModel] = useState(String((settings?.cpa as Record<string, unknown> | undefined)?.model ?? 'MiniMax-M2'))
   const [testResult, setTestResult] = useState<string | null>(null)
+  const [needsRestart, setNeedsRestart] = useState(false)
 
+  const initializedRef = useRef(false)
   useEffect(() => {
-    if (cpa) {
-      setBaseUrl(String(cpa.baseUrl ?? ''))
-      setApiKey(String(cpa.apiKey ?? ''))
-      setModel(String(cpa.model ?? 'MiniMax-M2'))
-    }
+    if (!settings || initializedRef.current) return
+    const cpaVal = settings.cpa as Record<string, unknown> | undefined
+    setBaseUrl(String(cpaVal?.baseUrl ?? ''))
+    setApiKey(String(cpaVal?.apiKey ?? ''))
+    setModel(String(cpaVal?.model ?? 'MiniMax-M2'))
+    initializedRef.current = true
   }, [settings])
 
   async function handleSave(): Promise<void> {
-    await window.electronAPI?.invoke('settings:set', {
-      cpa: { baseUrl, apiKey, model },
-    })
-    setTestResult(t('settings.connection.saved'))
+    const cpaVal = settings?.cpa as Record<string, unknown> | undefined
+    const changed =
+      baseUrl !== String(cpaVal?.baseUrl ?? '') ||
+      apiKey !== String(cpaVal?.apiKey ?? '') ||
+      model !== String(cpaVal?.model ?? 'MiniMax-M2')
+    try {
+      await window.electronAPI?.invoke('settings:set', { cpa: { baseUrl, apiKey, model } })
+      setTestResult(t('settings.connection.saved'))
+      if (changed) setNeedsRestart(true)
+    } catch {
+      setTestResult(t('settings.connection.testFailed'))
+    }
     setTimeout(() => setTestResult(null), 2000)
   }
 
@@ -49,7 +59,7 @@ export function ConnectionSection({ settings }: Props): React.ReactElement {
       <h3 className={styles.sectionTitle}>{t('settings.connection.title')}</h3>
 
       <label className={styles.field}>
-        <span className={styles.label}>API 地址</span>
+        <span className={styles.label}>{t('settings.connection.baseUrlLabel')}</span>
         <input
           className={styles.input}
           value={baseUrl}
@@ -59,7 +69,7 @@ export function ConnectionSection({ settings }: Props): React.ReactElement {
       </label>
 
       <label className={styles.field}>
-        <span className={styles.label}>API 密钥</span>
+        <span className={styles.label}>{t('settings.connection.apiKeyLabel')}</span>
         <input
           className={styles.input}
           type="password"
@@ -70,7 +80,7 @@ export function ConnectionSection({ settings }: Props): React.ReactElement {
       </label>
 
       <label className={styles.field}>
-        <span className={styles.label}>模型名称</span>
+        <span className={styles.label}>{t('settings.connection.modelLabel')}</span>
         <input
           className={styles.input}
           value={model}
@@ -88,7 +98,19 @@ export function ConnectionSection({ settings }: Props): React.ReactElement {
         </button>
       </div>
 
-      {testResult && <p className={styles.testResult}>{testResult}</p>}
+      {testResult && !needsRestart && <p className={styles.testResult}>{testResult}</p>}
+
+      {needsRestart && (
+        <div className={styles.restartBanner}>
+          <span className={styles.restartBannerText}>{t('settings.connection.restartRequired')}</span>
+          <button className={styles.btnPrimary} onClick={() => window.electronAPI?.send('app:relaunch')}>
+            {t('settings.connection.restartNow')}
+          </button>
+          <button className={styles.btnSecondary} onClick={() => setNeedsRestart(false)}>
+            {t('settings.connection.restartLater')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

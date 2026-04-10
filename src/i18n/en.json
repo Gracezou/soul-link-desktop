@@ -25,7 +25,10 @@
       "testSuccess": "✓ Connected",
       "testFailed": "Connection failed",
       "testError": "Error",
-      "testingBtn": "Testing…"
+      "testingBtn": "Testing…",
+      "baseUrlLabel": "API Base URL",
+      "apiKeyLabel": "API Key",
+      "modelLabel": "Model"
     },
     "character": {
       "title": "Choose Character",
@@ -91,7 +94,13 @@
       "testBtn": "Test Connection",
       "testSuccess": "Connected ✓",
       "testFailed": "Connection failed ✗",
-      "saved": "Saved"
+      "saved": "Saved",
+      "baseUrlLabel": "API Base URL",
+      "apiKeyLabel": "API Key",
+      "modelLabel": "Model",
+      "restartRequired": "Settings saved. Restart required to take effect.",
+      "restartNow": "Restart Now",
+      "restartLater": "Later"
     },
     "character": {
       "title": "Character",
