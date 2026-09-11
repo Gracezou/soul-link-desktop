@@ -40,8 +40,10 @@
   - 现状 `res/icons/` 只有 README.md，`setupTray` 回退 `nativeImage.createEmpty()`，macOS 上几乎不可见
 - [ ] **D3** 应用图标 + `electron-builder.yml` 解注释 `mac.icon` / `win.icon` / `nsis.*Icon`
   - 现状全部注释，产物用 Electron 默认图标
-- [ ] **D0**（可选工具）`tools/sprite_sheet_slicer.py`（切格 + 抠底 + 统一画布）、`tools/sprite_check.py`（尺寸与锚点一致性校验）
-  - 不受「主对话禁改 `electron/` `src/`」约束，可直接写
+- [x] **D0** 精灵工具链 —— `tools/sprite_sheet_slicer.py` + `tools/sprite_check.py`
+  - slicer：网格切片、边界 flood fill 抠底（不会挖穿角色内部的同色区域）、**共享裁剪框 + 底部对齐**（逐帧各自 trim 会破坏相对运动，正是桌宠抖动的成因）
+  - check：清单与磁盘一致性、画布尺寸统一、透明通道、边缘裁切、逐帧与逐动画的锚点漂移；失败退出码 1，可作构建门禁
+  - 仅依赖 Pillow。已用合成 sheet 端到端验证：正常用例 clean，注入错位/丢透明/缺帧/多余文件四类问题后全部捕获
 
 ## G · 引导流程
 

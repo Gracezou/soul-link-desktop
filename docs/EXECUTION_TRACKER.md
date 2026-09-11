@@ -24,7 +24,7 @@ Releases are cut by *what a user can install and see*, not by work type. Each re
 
 | Release | Theme | Needs CPA | Done | Total | Status |
 |---|---|---|---:|---:|---|
-| 0.2.0 | Visible desk pet | **No** | 0 | 9 | `BLOCKED` (Codex CLI) |
+| 0.2.0 | Visible desk pet | **No** | 1 | 9 | `BLOCKED` (Codex CLI) |
 | 0.3.0 | Conversations that work | Yes | 0 | 12 | `BLOCKED` (Codex CLI + CPA) |
 | 0.4.0 | Proactive companion | Yes | 0 | 13 | `TODO` |
 
@@ -61,7 +61,7 @@ Exit criteria need **no LLM gateway**. This is the only release that can proceed
 | C2 | P0 | Allow `res:` in packaged CSP; narrow renderer network sources | electron-dev | B1, D1 | Yes | `TODO` | 2026-09-11 | Not started — needs D1 output for real verification |
 | D2 | P1 | Add a visible tray icon | asset agent | None | Yes | `TODO` | 2026-09-11 | Not started |
 | D3 | P1 | Add application icons and enable builder icon configuration | asset/electron-dev | D2 | Yes | `TODO` | 2026-09-11 | Not started |
-| D0 | P2 | Sprite sheet slicer and frame consistency checker under `tools/` | docs/tools agent | None | Yes | `TODO` | 2026-09-11 | Optional; not subject to the delegated-edit rule |
+| D0 | P2 | Sprite sheet slicer and frame consistency checker under `tools/` | docs/tools agent | None | Yes | `DONE` | 2026-09-11 | End-to-end run on a synthetic sheet: clean pass, then 4 injected faults (9px anchor drift, lost alpha, missing frame, stray file) all caught, exit 1 |
 | F8 | P0 | Set `package.json` version to `0.2.0` | release owner | B1, C2, D1-D3, G1 | No | `TODO` | 2026-09-11 | Gated on implementation completion |
 | F9 | P0 | Verify the `0.2.0` legacy settings migration | test-build | F8 | No | `TODO` | 2026-09-11 | Migration never executes while version is `0.1.0`; first run happens at bump |
 
@@ -120,3 +120,4 @@ Exit criteria need **no LLM gateway**. This is the only release that can proceed
 | 2026-09-11 | B1 entered Phase 3 implementation, then blocked by local Codex CLI compatibility/connectivity; no source changes produced. |
 | 2026-09-11 | Group A committed as `027eada`; docs restructure as `e6a26e7`. Prior `DONE` entries carried no commit id, so a cross-worktree audit at `3081f80` reported A4 as stale. Commit id is now required Evidence for `REVIEW`/`DONE`. See `v0.2.0/PREFLIGHT.md`. |
 | 2026-09-11 | Single v0.2.0 release split into the 0.2.0 / 0.3.0 / 0.4.0 train, cut by installable user-visible value. Tracker moved to `docs/` and scoped across all three. Added G1 (onboarding soft gate) — without it 0.2.0 cannot be accepted while CPA is down. Both commits moved off `master` onto `release/0.2.0`. |
+| 2026-09-11 | D0 sprite tooling landed under `tools/` (slicer + checker, Pillow only). Unblocks D1 asset production, which does not depend on the Codex CLI. |

@@ -97,6 +97,21 @@ npm run build:win    # 仅 Windows NSIS（建议在 Windows 主机）
 3. 角色卡（SillyTavern V2 JSON）放入 `res/cards/<角色名>_card.json`
 4. 设置面板切换角色
 
+### 精灵工具链
+
+```bash
+# 把一张整图 sprite sheet 切成帧（共享裁剪框，保住相对运动，不会抖）
+python tools/sprite_sheet_slicer.py sheet.png --grid 2x4 \
+    --manifest res/sprites/baiyuan/manifest.json --only idle,talk,happy \
+    -o res/sprites/baiyuan/frames --size 220x280
+
+# 接线前校验：尺寸一致 / 透明底 / 锚点对齐 / 清单与磁盘一致（CI 可用，失败退出码 1）
+python tools/sprite_check.py res/sprites/baiyuan
+```
+
+建议用单图 sheet 一次生成所有姿态——同一次生成 = 同一个 latent，角色与画风天然一致，
+分多次文生图做不到。两个脚本只依赖 Pillow。
+
 DyberPet 格式精灵可用 `python tools/sprite_converter.py <act_conf.json> <输出目录>` 转换。
 
 ## 文档
