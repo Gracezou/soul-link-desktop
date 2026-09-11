@@ -2,9 +2,23 @@
 
 本项目在 1.0 之前遵循「新功能 / 行为变更 / schema 变更 → minor，纯修复 → patch」的约定，详见 [`v0.2.0/RELEASE_PLAN.md`](./v0.2.0/RELEASE_PLAN.md)。
 
-## [Unreleased] — 0.2.0
+## 发布列车
 
-开发中。目标：让 README 承诺的功能全部真正可用，并产出第一个可分发安装包。任务清单见 [`v0.2.0/TODO.md`](./v0.2.0/TODO.md)。
+单个大版本已按「装上能看出差别的东西」重切为三个可发布版本。每版都产出一个比上一版更好的安装包。
+
+### [Unreleased] — 0.4.0 · 主动来找你
+
+闲置到点桌宠自己开口，内容由角色生成而非写死文案。见 [`v0.4.0/RELEASE_PLAN.md`](./v0.4.0/RELEASE_PLAN.md)。
+
+### [Unreleased] — 0.3.0 · 好好说话
+
+两个入口都能正常对话，长回复读得完，出错有提示。见 [`v0.3.0/RELEASE_PLAN.md`](./v0.3.0/RELEASE_PLAN.md)。
+
+### [Unreleased] — 0.2.0 · 看得见的桌宠
+
+装上就能看见一只会动的桌宠。**不依赖 LLM 网关**，是网关重建期间唯一能推进的版本。见 [`v0.2.0/RELEASE_PLAN.md`](./v0.2.0/RELEASE_PLAN.md)。
+
+已完成（前置，非发布内容）：`CLAUDE.md` / `AGENTS.md` / `.claude/agents/` 六份定义与自建 Agent 架构对齐（`027eada`）；文档树重构与架构权威文档（`e6a26e7`）。
 
 ## [0.1.0] — 未发布
 

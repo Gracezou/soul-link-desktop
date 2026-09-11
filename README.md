@@ -2,8 +2,11 @@
 
 可以绑定乙女游戏角色人设进行互动的 AI 桌面情感伴侣。角色以桌宠精灵的形式常驻桌面，支持实时对话、情绪联动和主动打招呼。
 
-> **状态：`0.1.0` 已完成但从未发布，下一个版本 `0.2.0` 开发中。** 端到端链路尚未在恢复后的环境验证（LLM 网关重建中），桌宠精灵帧资源缺失。
-> 本版本范围见 [`docs/v0.2.0/RELEASE_PLAN.md`](docs/v0.2.0/RELEASE_PLAN.md)，任务清单见 [`docs/v0.2.0/TODO.md`](docs/v0.2.0/TODO.md)。
+> **状态：`0.1.0` 已完成但从未发布。** 后续工作已切分为三个可发布版本：
+> [`0.2.0` 看得见的桌宠](docs/v0.2.0/RELEASE_PLAN.md)（不依赖 LLM 网关）→
+> [`0.3.0` 好好说话](docs/v0.3.0/RELEASE_PLAN.md) →
+> [`0.4.0` 主动来找你](docs/v0.4.0/RELEASE_PLAN.md)。
+> 任务状态见 [`docs/EXECUTION_TRACKER.md`](docs/EXECUTION_TRACKER.md)。桌宠精灵帧资源缺失，端到端链路尚未验证。
 
 ## 功能
 
@@ -101,10 +104,11 @@ DyberPet 格式精灵可用 `python tools/sprite_converter.py <act_conf.json> <�
 | 文件 | 内容 |
 |---|---|
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | **架构唯一事实来源** — 模块地图、IPC 契约、数据流、持久化、安全与跨平台评估、已知偏差 |
-| [`docs/v0.2.0/RELEASE_PLAN.md`](docs/v0.2.0/RELEASE_PLAN.md) | 当前版本的目标、范围边界、准入/退出标准、版本号约定 |
-| [`docs/v0.2.0/TODO.md`](docs/v0.2.0/TODO.md) | 当前版本任务清单（A–F 六组）与验证/发布检查表 |
-| [`docs/v0.2.0/*.md`](docs/v0.2.0/) | 本版本的功能设计文档（气泡重设计、agent 元数据重写计划） |
-| [`docs/BACKLOG.md`](docs/BACKLOG.md) | 已确认但推后到后续版本的事项 |
+| [`docs/EXECUTION_TRACKER.md`](docs/EXECUTION_TRACKER.md) | **任务状态唯一来源**，三个版本统一台账；含 Evidence 规范与当前阻塞 |
+| [`docs/v0.2.0/`](docs/v0.2.0/) | 看得见的桌宠 —— RELEASE_PLAN / TODO / PREFLIGHT（准入证据）|
+| [`docs/v0.3.0/`](docs/v0.3.0/) | 好好说话 —— RELEASE_PLAN / TODO / 气泡重设计方案 |
+| [`docs/v0.4.0/`](docs/v0.4.0/) | 主动来找你 —— RELEASE_PLAN / TODO |
+| [`docs/BACKLOG.md`](docs/BACKLOG.md) | 已确认但推后到 0.5.0+ 的事项 |
 | [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | 版本变更记录 |
 | `CLAUDE.md` / `AGENTS.md` | Claude Code / Codex 协作规则与 subagent 工作流 |
 | `docs/archive/` | 历史设计文档留痕（2603 / 2604 / 旧 TODO / 已回滚的 patch），内容多已被实现取代，仅供追溯 |

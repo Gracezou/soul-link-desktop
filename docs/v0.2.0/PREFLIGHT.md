@@ -58,7 +58,7 @@
 
 ## 4. Evidence 规范（此后强制）
 
-**适用对象：[`EXECUTION_TRACKER.md`](./EXECUTION_TRACKER.md)** —— 它是任务状态的唯一来源。
+**适用对象：[`EXECUTION_TRACKER.md`](../EXECUTION_TRACKER.md)** —— 它是任务状态的唯一来源。
 `TODO.md` 是需求与验收标准文档，其复选框仅作阅读索引；两者冲突以 tracker 为准。
 
 ### 4.1 状态定义
@@ -101,7 +101,7 @@ Evidence: npx jest tests/unit/ → 7 suites / 67 tests passed
 
 ## 7. 待处理的外部阻塞
 
-`EXECUTION_TRACKER.md` 记录 B1 因本地 Codex CLI `0.136.0` 无法完成实现运行而 `BLOCKED`：
+`../EXECUTION_TRACKER.md` 记录 B1 因本地 Codex CLI `0.136.0` 无法完成实现运行而 `BLOCKED`：
 默认配置无法解码较新的 `max` reasoning 值，`--ignore-user-config -m gpt-5.5` 重试又反复丢失采样连接。
 
 由于仓库的强制委派工作流要求 `electron-dev` / `frontend-dev` 只能经 `codex exec` 写代码，
