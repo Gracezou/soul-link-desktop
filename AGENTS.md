@@ -1,169 +1,233 @@
 # AGENTS.md
 
-This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+This file provides guidance to Codex when working with this repository.
 
 ## Project Overview
-AI-powered desktop companion app (乙女游戏角色情感伴侣). Built with Electron + React + TypeScript. Connects to an OpenClaw AI gateway over WebSocket to drive an animated pet sprite and chat interface.
+
+Soul Link Desktop is an AI desktop companion built with Electron, React, and
+TypeScript. Its in-process Agent under `electron/agent/` connects to the CPA or
+another OpenAI-compatible LLM gateway over HTTP and SSE (default model:
+`MiniMax-M2`), maintains character context and local memory, and drives the
+desktop pet chat experience.
+
+`docs/ARCHITECTURE.md` is the architecture source of truth. Read it before
+changing process boundaries, IPC, persistence, packaging, or Agent behavior.
 
 ## Commands
-- `npm run dev` — Start dev server (Vite on port 5173 + electronmon for hot-reload)
-- `npm run build` — TypeScript compile electron/ → dist-electron/, Vite build → dist/, then electron-builder package
-- `npm test` — Run Jest tests (node environment, ts-jest preset)
-- Run a single test file: `npx jest tests/responseParser.test.ts`
+
+- `npm run dev` - Vite, main-process TypeScript watch, and Electron hot reload.
+- `npm run build:renderer` - build `src/` into `dist/`.
+- `npm run build:main` - compile `electron/` into `dist-electron/`.
+- `npm run build` - build both processes and package the current platform.
+- `npm test` or `npm run test:unit` - run `tests/unit/`.
+- `npm run test:integration` - run live LLM tests serially; requires
+  `CPA_API_KEY`, otherwise tests skip.
+- `npm run test:all` - run all Jest suites serially.
+- `npx jest tests/unit/ooc-detector.test.ts` - run one unit test file.
+- `npx tsc -p tsconfig.json --noEmit` - check renderer types.
+- `npx tsc -p tsconfig.node.json --noEmit` - check main-process types.
+
+The repository has no ESLint dependency or configuration. Do not report a
+missing lint command as a product failure.
 
 ## Directory Rules
-- `electron/` — Main process (Node.js, **CommonJS**), compiled to `dist-electron/`
-- `src/` — Renderer process (React, **ESM**), compiled to `dist/`
-- `res/` — Static assets: sprites, character cards, tray icon
-- `tools/` — Python dev utilities (sprite converter, card generator)
-- `tests/` — Jest tests; `tests/__mocks__/electron.ts` mocks the Electron module
-- `data/` — Runtime data including `settings.json` (gitignored)
+
+- `electron/` - Electron main process, Node.js/CommonJS.
+- `electron/agent/` - in-process Agent, LLM client, character engine, context,
+  compression, memory, session persistence, OOC detection, and token utilities.
+- `electron/logger.ts` - ops, API, and conversation JSONL logging.
+- `electron/utils/` - runtime resource, database, and onboarding path/guard logic.
+- `electron/windows/` - pet, chat, settings, and onboarding windows.
+- `src/` - React renderer, browser ESM. It must not import `electron/` modules.
+- `res/` - packaged cards, sprites, and icons.
+- `tests/unit/` - default Jest suite; `tests/integration/` requires a live gateway.
+- `tools/` - development utilities for sprite conversion and assets.
+- `data/` - development database data such as `soul-link.db`; ignored by Git.
+- `docs/ARCHITECTURE.md` - current architecture source of truth.
+- `docs/v0.2.0/` - current release plan, execution tracker, and feature designs.
+- `docs/archive/` - historical material; do not treat it as current architecture.
 
 ## Architecture
 
 ### Process Separation
-Electron main process and React renderer run in separate Node.js/browser contexts and communicate **only via IPC**. Channel names are defined as constants in `electron/ipc.ts`.
 
-### OpenClaw Bridge (Main Process)
-`electron/bridge/` — WebSocket JSON-RPC-like client to the AI gateway:
-- `client.ts` — Low-level WebSocket client; handles handshake (challenge/nonce), send/receive
-- `worker.ts` — High-level session lifecycle: connect → list cards → import card → start roleplay
-- `config.ts` — `BridgeConfig` interface and defaults
-- `types.ts` — Gateway protocol TypeScript types
+Main and renderer communicate only through the preload IPC API. Main owns
+Electron, network calls, settings, SQLite, resources, and lifecycle. Renderer
+owns UI state and presentation. New IPC channels must be constants in
+`electron/ipc.ts` and documented in the contract comment in `electron/preload.ts`.
 
-Startup flow: `main.ts` instantiates `BridgeWorker`, which drives the bridge through the session lifecycle and fires IPC events to the renderer.
+### Agent
 
-### IPC Channels (`electron/ipc.ts`)
-Key channels:
-- `bridge:message` — AI response text pushed to renderer `{ runId, text }`
-- `bridge:session` — Session ready status `{ ready, card }`
-- `bridge:send` — Renderer sends user message `{ message }`
-- `settings:get` / `settings:set` — Settings read/write
-- `companion:nudge` — Companion scheduler triggers proactive message
+`SoulLinkAgent` in `electron/agent/index.ts` orchestrates the response lifecycle:
 
-### Renderer State (Zustand stores in `src/stores/`)
-- `chatStore.ts` — Messages array + session/loading state
-- `petStore.ts` — Animation state, FV (favorability) level, physics state
-- `settingsStore.ts` — Gateway config, character selection
+1. `initialize()` loads sql.js, the character card, and the current session.
+2. `sendMessage()` builds context and streams an LLM response.
+3. OOC output may be retried at most twice.
+4. The final assistant message is saved before asynchronous memory extraction
+   and, after more than 30 messages, summary compression.
+5. `dispose()` closes persistence resources.
 
-### Response Pipeline
-```
-User input → ChatWindow → invoke('bridge:send')
-  → BridgeWorker → OpenClaw WebSocket
-  → bridge:message IPC event
-  → useBridge hook → responseParser.ts (extracts actions/dialogues/emotions)
-  → chatStore (append message) + petStore (trigger animation via emotionMapper.ts)
-```
+Important modules:
 
-### Animation System (`src/pet/`)
-- `AnimationEngine.ts` — Probability-based action selection, FV-gated animations, frame sequencing
-- `SpriteSheet.ts` — Frame image loader and cache
-- `PetCanvas.tsx` — Canvas 2D renderer; reads `res/sprites/<character>/manifest.json`
-- `PhysicsEngine.ts` — Drag, fall, bounce physics
+- `llm-client.ts` - OpenAI-compatible chat completions and SSE streaming, with
+  timeout and network retry handling.
+- `character-engine.ts` - SillyTavern V2 card to system prompt.
+- `context-manager.ts` - token-budgeted conversation window.
+- `compressor.ts` - summary generation for long sessions.
+- `memory-store.ts` - long-term memories.
+- `session-store.ts` - sql.js/WASM sessions and messages.
+- `ooc-detector.ts`, `token-counter.ts`, `tag-utils.ts` - response safeguards and
+  protocol helpers.
 
-**Sprite manifest format**: `res/sprites/<character>/manifest.json` — defines `character`, `defaultAnimation`, `frameRate`, and `animations[]` array. Tool `tools/sprite_converter.py` converts DyberPet `act_conf.json` to this format.
+`launchMainApp()` constructs the Agent with total/system/output budgets of
+8000/2000/500 tokens, calls `initialize()`, and sends `agent:ready` to the pet
+window.
 
-### Settings Persistence
-`electron/store/settings.ts` wraps `electron-store`. Schema (`SoulLinkSettings`):
+### IPC Contract
+
+Agent events declared in `electron/ipc.ts`:
+
+- `agent:ready` - `{ ready, character }`
+- `agent:waiting` - `{ messageId }`
+- `agent:delta` - `{ messageId, delta }`; `delta` is cumulative response text,
+  not an incremental chunk. Consumers replace, not append.
+- `agent:final` - `{ messageId, text }`
+- `agent:error` - `{ messageId, error }`
+- `agent:message-saved` - `{ message }`, sent to the history window.
+- `agent:send`, `agent:get-history`, `agent:reset`, `agent:test-connection`, and
+  `agent:get-status` are renderer-to-main commands or queries.
+
+Other declared groups are `settings:get/set/changed`, `pet:mouse-enter/leave`,
+`companion:nudge/status`, `window:toggle-chat/open-settings/open-history`,
+`onboarding:complete`, `app:relaunch/get-version`, and `cards:list`.
+
+Current legacy raw-string channels include `chat:open`, `settings:open`,
+`window:close`, `window:close-history`, `pet:move-window`,
+`pet:save-position`, `pet:resize-window`, `pet:set-clickthrough`,
+`pet:set-focusable`, and the unused `pet:drag-start/move/end` senders. Existing
+ones are backlog; new channels must use `electron/ipc.ts` constants.
+
+Agent lifecycle events currently go only to the pet window. Broadcasting them to
+the chat window is a v0.2.0 task because the chat renderer otherwise cannot
+clear loading state.
+
+### Renderer Data Flow
+
+`useChat.sendMessage` or `CompactInput` sends `agent:send`. The Agent emits
+waiting, cumulative delta, final, and error events.
+
+- `ChatBubbleFeedback` consumes waiting/delta/final and uses protocol filters and
+  `bubbleParser` for the typewriter bubble.
+- `useAgent` consumes ready/final, updates `chatStore`, maps emotion, and updates
+  `petStore`.
+
+These paths currently duplicate final-response emotion/FV handling. The v0.2.0
+bubble redesign removes the duplicate side effect.
+
+### Renderer State
+
+- `chatStore.ts` - messages, readiness, connection, and loading state.
+- `petStore.ts` - animation, favorability, and physics state.
+- `settingsStore.ts` - legacy unused store with obsolete gateway fields; do not
+  extend it without an explicit cleanup decision.
+
+### Settings And Persistence
+
+`SoulLinkSettings` contains:
+
 ```typescript
-{ openclaw: { gatewayWsUrl, authToken, sessionKey, defaultCard, ... },
-  companion: { enabled, idleMinutes, mode },
+{
+  cpa: { baseUrl, apiKey, model },
+  character: { cardName },
+  companion: { enabled, idleMinutes, mode: 'balanced' | 'checkin' | 'question' | 'report' },
   pet: { character, positionX, positionY, scale },
-  ui: { language } }
+  ui: { language, theme },
+  onboarding: { completed, completedAt? }
+}
 ```
 
-### Windows
-- **Pet window** (`electron/windows/petWindow.ts`) — Transparent, frameless, always-on-top, click-through; hosts `PetCanvas`
-- **Chat window** (`electron/windows/chatWindow.ts`) — Standard popup; opened when `ChatBubble` is clicked
-- **Settings window** (`electron/windows/settingsWindow.ts`) — Tabbed settings UI
+The electron-store `0.2.0` legacy migration converts the former `openclaw`
+settings into `cpa` and `character`. Do not remove this migration.
 
-### Companion Scheduler
-`electron/companion/scheduler.ts` fires `companion:nudge` IPC events on idle intervals; trigger conditions defined in `electron/companion/triggers.ts`.
+Settings live under Electron `userData`. The development database is
+`data/soul-link.db`; packaged builds use `userData/soul-link.db`. Resource and DB
+paths must use `electron/utils/paths.ts`. `sql.js` must remain unpacked from ASAR.
 
-## Packaging
-`electron-builder.yml` targets Windows (NSIS `.exe`) and macOS (`.dmg`). Run `npm run build` to produce installers.
+### Windows And Companion
 
-## Full Architecture Reference
-`docs/SOUL_LINK_MIGRATION.md` — comprehensive spec (746 lines) covering gateway protocol, IPC design, animation manifest format, settings schema, and the original 7-phase implementation plan.
+- Pet: transparent, frameless, always-on-top renderer for `PetApp`.
+- Chat: frameless popup positioned near the pet.
+- Settings: fixed settings window.
+- Onboarding: first-run configuration guarded by `utils/onboardingGuard.ts`.
+- History: resizable frameless window created in `main.ts`.
 
----
+`CompanionScheduler` currently emits fixed `companion:nudge` messages, but the
+renderer has no consumer and nudges do not pass through the Agent. Completing
+that connection is part of v0.2.0.
 
-## Subagent Orchestration — MANDATORY
+## Known Gaps
 
-This project has 6 specialized subagents defined in `.Codex/agents/`.
+- `res/sprites/baiyuan/frames/` is empty although
+  `res/sprites/baiyuan/manifest.json` names animations;
+  the pet currently falls back to placeholder rendering.
+- Logging is implemented in `electron/logger.ts`, but `electron/main.ts` does not
+  call `initLogging()` or `shutdownLogging()`.
+- Agent callbacks in `electron/main.ts` send lifecycle events only to petWindow,
+  not the chat window.
+- Packaged CSP in `electron/main.ts` does not yet allow the `res:` fetch scheme.
+- `electron/main.ts` and `electron/companion/` emit fixed companion nudges that
+  are neither Agent-generated nor consumed by `src/`.
+- `src/i18n/`, `src/utils/emotionMapper.ts`,
+  `src/pet/expressions/ExpressionRenderer.ts`, and `src/App.tsx` retain obsolete
+  gateway wording in user text or comments.
+- `src/stores/settingsStore.ts` is unused legacy code.
+- Six legacy tests at `tests/` root are excluded by the default `npm test`.
+- No ESLint toolchain is configured.
+- Sprite frames, tray icon, and application icons are missing.
 
-### ⚠️ CRITICAL: No Direct Code Changes in Main Conversation
+Track v0.2.0 work in `docs/v0.2.0/EXECUTION_TRACKER.md`; longer-term internal
+cleanup belongs in `docs/BACKLOG.md`.
 
-**You MUST NOT directly create, edit, or delete files under `electron/` or `src/` in the main conversation.**
-ALL code changes MUST be delegated to the appropriate subagent.
-Modifying source files directly is a violation of the project workflow.
+## Subagent Workflow
 
-The main conversation is for coordination only: reading code, dispatching subagents, reviewing results, and communicating with the user. The main conversation does NOT write code.
+All source changes follow these phases:
 
-### Development Workflow
+1. `pm-planner` defines scope, dependencies, and acceptance criteria for
+   non-trivial work.
+2. `architect` defines contracts for IPC, new processes/windows, module-boundary
+   changes, or work spanning `electron/` and `src/`.
+3. `electron-dev` exclusively changes `electron/`; `frontend-dev` exclusively
+   changes `src/`, both through `codex exec`.
+4. `code-reviewer` reviews completed implementation. P0 findings return to the
+   relevant implementation agent before re-review.
+5. `test-build` runs renderer/main type checks, unit tests, and renderer/main
+   builds. Full packaging is required only for release or packaging changes.
 
-This project follows a strict 5-phase development workflow. Every feature, bug fix, or refactor MUST go through these phases in order. No phase may be skipped unless it is genuinely not applicable.
+The main conversation must not create, edit, or delete files under `electron/`
+or `src/`. Documentation and asset-only work does not require a Phase 3 source
+implementation agent. Preserve unrelated changes in a dirty worktree.
 
-```
-Phase 1: Requirement Analysis    → pm-planner
-Phase 2: Architecture Design     → architect
-Phase 3: Implementation          → electron-dev / frontend-dev
-Phase 4: Code Review             → code-reviewer
-Phase 5: Test & Verification     → test-build
-```
-
-**Phase 1 — Requirement Analysis** (`pm-planner`, Opus, read-only)
-- Triggered by: design doc, PRD, feature spec, or any non-trivial task
-- Output: task breakdown with priorities, dependencies, and acceptance criteria
-- MUST run before any code changes begin
-- Skip ONLY for trivial single-file fixes (typos, one-line config changes)
-
-**Phase 2 — Architecture Design** (`architect`, Opus, read-only)
-- Triggered by: new IPC channels, new windows/processes, module boundary changes, or cross-directory work
-- Output: interface contracts, data flow design, security assessment
-- MUST run when changes touch both `electron/` and `src/`
-- Skip when changes are isolated to a single module with no new interfaces
-
-**Phase 3 — Implementation** (`electron-dev` / `frontend-dev`, Sonnet, via Codex CLI)
-- `electron-dev` — ALL changes under `electron/` (main process, IPC, windows, bridge, store)
-- `frontend-dev` — ALL changes under `src/` (React components, hooks, stores, styles, animations)
-- These agents write code exclusively through `codex exec` — no other method is permitted
-- MAY run in parallel once Phase 2 has finalized interface contracts
-- If changes span both directories, BOTH agents must be dispatched
-
-**Phase 4 — Code Review** (`code-reviewer`, Opus, read-only + bash checks)
-- MUST run after ALL implementation is complete — never before or during
-- Reviews: code quality, Electron security, TypeScript types, cross-platform compatibility
-- Output: categorized findings (P0 must-fix / P1 should-improve / P2 optional)
-- If P0 issues found → dispatch the relevant implementation agent to fix, then re-review
-
-**Phase 5 — Test & Verification** (`test-build`, Sonnet, read-only + bash checks)
-- Runs: `npx tsc --noEmit`, `npx eslint .`, `npm test`, `npm run build`
-- Output: pass/fail status for each check with error details
-- If failures found → dispatch the relevant implementation agent to fix, then re-verify
+For a single-directory change, keep the same sequence with only the relevant
+implementation agent. For unclear scope, use `architect` before implementation.
 
 ### Routing Rules
 
-| Trigger | Subagent | Phase |
-|---------|----------|-------|
-| Design doc / PRD / feature spec received | `pm-planner` | 1 |
-| Module boundaries, IPC protocol, new window/process | `architect` | 2 |
-| ANY changes under `electron/` | `electron-dev` | 3 |
-| ANY changes under `src/` | `frontend-dev` | 3 |
-| After ALL code changes are complete | `code-reviewer` | 4 |
-| Build/test verification needed | `test-build` | 5 |
+| Trigger | Required agent |
+|---|---|
+| Design document, PRD, feature specification, or non-trivial task | `pm-planner` |
+| IPC contract, window/process, module boundary, or `electron/` + `src/` work | `architect` |
+| Any source change under `electron/` | `electron-dev` |
+| Any source change under `src/` | `frontend-dev` |
+| Completed implementation | `code-reviewer` |
+| Accepted review requiring checks/builds | `test-build` |
 
 ### Single-Module Shortcuts
 
-For changes touching only one directory, the workflow compresses but phases are NOT skipped:
-- `electron/` only → Phase 1 (if non-trivial) → `electron-dev` → `code-reviewer` → `test-build`
-- `src/` only → Phase 1 (if non-trivial) → `frontend-dev` → `code-reviewer` → `test-build`
-- Scope unclear → dispatch `architect` first to assess impact before implementation
-
-### Code Modification Policy
-
-- `electron-dev` and `frontend-dev` **MUST use `codex exec` to modify code**
-- They MUST NOT use Write, Edit, `echo >`, `cat >`, `sed -i`, `tee`, or any other direct file write method
-- `pm-planner`, `architect`, `code-reviewer` are strictly read-only — they do NOT modify source files
-- `test-build` only runs check commands — it does NOT modify source files
-- The main conversation MUST NOT modify source files under `electron/` or `src/` — delegation is mandatory
+- `electron/` only: `pm-planner` when non-trivial -> `electron-dev` ->
+  `code-reviewer` -> `test-build`.
+- `src/` only: `pm-planner` when non-trivial -> `frontend-dev` ->
+  `code-reviewer` -> `test-build`.
+- Both directories or a new interface: `pm-planner` -> `architect` -> both
+  implementation agents as applicable -> `code-reviewer` -> `test-build`.
+- Documentation/assets only: no Phase 3 source agent is required, but review and
+  proportionate verification still apply.

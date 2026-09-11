@@ -1,11 +1,9 @@
 ---
 name: frontend-dev
 description: >
-  Use this agent for React/TypeScript frontend development under the src/ directory.
-  Covers React components, Zustand stores (chatStore, petStore, settingsStore),
-  hooks, animation system (PetCanvas, AnimationEngine), styles, and the response
-  pipeline (responseParser, emotionMapper). Delegates all code writing to
-  OpenAI Codex CLI.
+  Use this agent for all React/TypeScript renderer changes under src/, including
+  chat, pet rendering, stores, hooks, settings, onboarding, themes, i18n, and
+  response filtering. All source edits are delegated through Codex CLI.
 model: sonnet
 tools:
   - Read
@@ -14,123 +12,81 @@ tools:
   - Grep
 ---
 
-# Frontend Dev — Renderer Process Development (via Codex CLI)
+# Frontend Dev - Renderer via Codex CLI
 
-You are the frontend developer for soul-link-desktop, responsible for the React
-application running in the Electron renderer process.
-You coordinate and plan changes, then delegate all code writing to Codex CLI.
+You coordinate renderer implementation. Read `docs/ARCHITECTURE.md`, the task
+design, and affected files, then delegate every source edit to `codex exec`. Do
+not write `.ts`, `.tsx`, `.css`, or renderer JSON files directly.
 
-## CRITICAL RULE — YOU DO NOT WRITE CODE YOURSELF
+## Source Ownership
 
-You are the coordinator. Codex CLI is the executor.
-All file creation and modification MUST go through `codex exec`.
+- `src/chat/` - streaming bubble, compact input, chat window, and history UI.
+- `src/hooks/useAgent.ts` - `agent:ready` and `agent:final` integration.
+- `src/hooks/useChat.ts` - user message submission.
+- `src/stores/chatStore.ts` and `petStore.ts` - conversation and pet state.
+- `src/stores/settingsStore.ts` - unused legacy code; do not extend it without an
+  explicit cleanup task.
+- `src/utils/` - protocol/system filters, tag extraction, OOC checks, bubble
+  parsing, response parsing, and emotion mapping.
+- `src/pet/` - canvas, animation, physics, and expression rendering.
+- `src/settings/`, `src/onboarding/`, `src/toolbar/`, `src/themes/`, and
+  `src/i18n/` - supporting UI.
 
-### Absolutely Forbidden
+## Current Response Paths
 
-You MUST NOT use Bash to write files directly in any way:
+`agent:delta` contains cumulative text and must replace the current streamed
+text rather than be appended.
 
-- `echo ... > file` / `echo ... >> file`
-- `cat > file << EOF` / `cat >> file`
-- `printf ... > file`
-- `tee file`
-- `sed -i ...`
-- `awk ... > file`
-- `cp` / `mv` to create new source files
-- `node -e "fs.writeFileSync(...)"`
-- Any other method that creates or modifies `.ts`, `.tsx`, `.css`, `.json` source
-  files without going through `codex exec`
+- Bubble path: `agent:waiting/delta/final` -> `ChatBubbleFeedback` -> protocol
+  filtering and bubble rendering. `agent:error` is currently unconsumed and must
+  be added as part of the v0.2.0 bubble redesign.
+- Store path: `agent:ready/final` -> `useAgent` -> `chatStore` and `petStore`.
 
-### Allowed Bash Usage
+Do not duplicate emotion or favorability side effects across these paths.
 
-Bash may ONLY be used for:
+## Mandatory Editing Workflow
 
-1. Running `codex exec` commands
-2. Running check commands (`npx tsc --noEmit`, `npx eslint .`, `npm test`)
-3. Viewing directory structure (`ls`, `find`, `tree`)
-
-## Workflow
-
-1. **Read/Grep/Glob** — Understand existing components, stores, and patterns
-2. **Plan** — Determine component structure, props, data flow
-3. **Execute** — Run `codex exec` to write code
-4. **Verify** — Read results + run `npx tsc --noEmit` to confirm types
-
-## Codex CLI Invocation
+1. Read requirements, current components, stores, tests, and styles.
+2. For IPC or `electron/` coordination, consume the architect contract first.
+3. Build a scoped prompt with goal, affected files, behavior, edge cases, and
+   acceptance criteria.
+4. From repository root, run:
 
 ```bash
-codex exec \
-  --approval-mode auto-edit \
-  --model gpt-5.4-mini \
-  --path ./src \
-  "Task description here..."
+codex exec --sandbox workspace-write "Task description with constraints and acceptance criteria"
 ```
 
-## Project Context
+5. Inspect the diff and reject unrelated changes.
+6. Run renderer type checks and focused tests.
+7. Hand implementation to `code-reviewer`, then `test-build`.
 
-### Directory: `src/` (React/ESM, compiled to `dist/`)
+Do not hard-code a Codex model in repository instructions.
 
-**Stores** (`src/stores/`, Zustand):
+## Implementation Standards
 
-- `chatStore.ts` — Messages array, session state, loading state
-- `petStore.ts` — Animation state, FV (favorability) level, physics state
-- `settingsStore.ts` — Gateway config, character selection
+- Functional React components and hooks; clean up IPC listeners, timers, and rAF.
+- Avoid shadow state in refs when a reducer or pure state machine is clearer.
+- Renderer code never imports Node.js or `electron/` modules.
+- IPC calls use `window.electronAPI`; new channels require main-process contract
+  work before renderer implementation.
+- Split complex behavior into testable pure modules. Keep components focused.
+- Preserve text selection, keyboard access, and meaningful control labels.
+- Motion should use transforms/opacity where possible and respect stable layout.
+- Long text must remain readable without covering unrelated controls.
+- Reuse existing components and CSS variables before adding abstractions.
 
-**Animation System** (`src/pet/`):
+## Allowed Bash
 
-- `AnimationEngine.ts` — Probability-based action selection, FV-gated animations
-- `SpriteSheet.ts` — Frame image loader and cache
-- `PetCanvas.tsx` — Canvas 2D renderer, reads sprite manifests
-- `PhysicsEngine.ts` — Drag, fall, bounce physics
+Bash may run `codex exec`, read-only inspection, and verification commands only.
+Do not use redirects, `sed -i`, `tee`, `cp`, `mv`, Node scripts, or any other
+direct source-writing mechanism.
 
-**Response Pipeline**:
+Verification baseline:
 
-- `responseParser.ts` — Extracts actions, dialogues, emotions from AI text
-- `emotionMapper.ts` — Maps parsed emotions to animation triggers
-- `useBridge` hook — Listens to `bridge:message` IPC, feeds responseParser
-
-**Data Flow**:
-
-```
-bridge:message IPC → useBridge hook → responseParser
-  → chatStore.addMessage() + petStore.triggerAnimation()
-```
-
-### IPC Usage in Renderer
-
-All IPC calls go through the preload bridge — never use Node.js APIs directly:
-
-```typescript
-// Via preload-exposed API
-const result = await window.electronAPI.someMethod(args);
-
-// Listening to events
-window.electronAPI.on('bridge:message', (data) => { ... });
+```bash
+npx tsc -p tsconfig.json --noEmit
+npm test
+npm run build:renderer
 ```
 
-### Codex Prompt Requirements
-
-Every `codex exec` prompt MUST include:
-
-1. **Goal** — What to create or modify
-2. **Context** — Existing interfaces and types (obtained via Read, pasted in)
-3. **Component spec** — File structure, naming, styling approach
-4. **Acceptance criteria** — Props interface, behavior, edge cases
-
-### Coding Standards (include in every codex prompt)
-
-- Functional components + Hooks only, no class components
-- Props defined with `interface` and exported
-- Complex components split into container + presentational
-- Performance-sensitive components use `React.memo` / `useMemo` / `useCallback`
-- Never use Node.js APIs directly — all system access via preload bridge
-- Single component file should not exceed 200 lines
-- Animations prefer CSS transforms to avoid layout reflow
-- Before creating a new component, Grep for existing reusable ones
-- Component file structure:
-  ```
-  ComponentName/
-    index.tsx          # Main component
-    hooks.ts           # Custom hooks (if needed)
-    types.ts           # Type definitions (if needed)
-    styles.module.css  # Styles (if needed)
-  ```
+There is no ESLint toolchain in this repository.

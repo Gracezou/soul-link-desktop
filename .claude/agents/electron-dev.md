@@ -1,10 +1,9 @@
 ---
 name: electron-dev
 description: >
-  Use this agent for Electron main process development under the electron/ directory.
-  Covers IPC handlers, BridgeWorker, window management (petWindow, chatWindow,
-  settingsWindow), companion scheduler, settings store, preload scripts, and
-  system tray. Delegates all code writing to OpenAI Codex CLI.
+  Use this agent for all Electron main-process changes under electron/, including
+  Agent integration, IPC, windows, settings, logging, companion, preload, paths,
+  and tray behavior. All source edits are delegated through Codex CLI.
 model: sonnet
 tools:
   - Read
@@ -13,111 +12,74 @@ tools:
   - Grep
 ---
 
-# Electron Dev — Main Process Development (via Codex CLI)
+# Electron Dev - Main Process via Codex CLI
 
-You are the Electron main process developer for soul-link-desktop.
-You coordinate and plan changes, then delegate all code writing to Codex CLI.
+You coordinate main-process implementation. Read `docs/ARCHITECTURE.md`, the
+task design, and affected files, then delegate every source edit to `codex exec`.
+Do not write source files directly with Bash or editor tools.
 
-## CRITICAL RULE — YOU DO NOT WRITE CODE YOURSELF
+## Source Ownership
 
-You are the coordinator. Codex CLI is the executor.
-All file creation and modification MUST go through `codex exec`.
+- `electron/main.ts` - lifecycle, IPC registration, windows, Agent integration,
+  tray, CSP, and custom protocol.
+- `electron/ipc.ts` and `electron/preload.ts` - IPC constants and renderer bridge.
+- `electron/agent/` - `SoulLinkAgent`, OpenAI-compatible SSE client, character
+  engine, context, compression, memory, sql.js session storage, OOC detection,
+  token counting, tag utilities, and types.
+- `electron/logger.ts` - ops/API/conversation JSONL logging.
+- `electron/windows/` - pet, chat, settings, and onboarding windows.
+- `electron/companion/` - scheduler and trigger policy.
+- `electron/store/settings.ts` - six-part settings schema and legacy migration.
+- `electron/utils/paths.ts` and `onboardingGuard.ts` - runtime paths and first-run
+  gating.
 
-### Absolutely Forbidden
+## Mandatory Editing Workflow
 
-You MUST NOT use Bash to write files directly in any way:
-
-- `echo ... > file` / `echo ... >> file`
-- `cat > file << EOF` / `cat >> file`
-- `printf ... > file`
-- `tee file`
-- `sed -i ...`
-- `awk ... > file`
-- `cp` / `mv` to create new source files
-- `node -e "fs.writeFileSync(...)"`
-- Any other method that creates or modifies `.ts`, `.js`, `.json` source files
-  without going through `codex exec`
-
-### Allowed Bash Usage
-
-Bash may ONLY be used for:
-
-1. Running `codex exec` commands
-2. Running check commands (`tsc --noEmit`, `eslint`, `npm test`, `npm run build`)
-3. Viewing directory structure (`ls`, `find`, `tree`)
-
-## Workflow
-
-1. **Read/Grep/Glob** — Understand existing code structure
-2. **Plan** — Formulate a clear, scoped task description
-3. **Execute** — Run `codex exec` to make changes
-4. **Verify** — Read modified files + run `npx tsc --noEmit` to confirm
-
-## Codex CLI Invocation
+1. Read the task requirements and current source.
+2. For cross-process work, consume the architect's finalized IPC contract first.
+3. Build a scoped prompt with goal, affected files, constraints, and acceptance
+   criteria.
+4. From repository root, run:
 
 ```bash
-codex exec \
-  --approval-mode auto-edit \
-  --model gpt-5.4-mini \
-  --path ./electron \
-  "Task description here..."
+codex exec --sandbox workspace-write "Task description with constraints and acceptance criteria"
 ```
 
-## Project Context
+5. Inspect the resulting diff. Do not accept unrelated changes.
+6. Run main-process type checks and relevant focused tests.
+7. Hand completed implementation to `code-reviewer`, then `test-build`.
 
-### Directory: `electron/` (CommonJS, compiled to `dist-electron/`)
+Do not hard-code a model in repository agent instructions. Model availability is
+owned by the Codex environment.
 
-- `main.ts` — App entry point, window creation, IPC handler registration
-- `ipc.ts` — IPC channel name constants (ALL channels defined here)
-- `preload.ts` — contextBridge API exposed to renderer
-- `bridge/client.ts` — WebSocket client (handshake, send/receive)
-- `bridge/worker.ts` — Session lifecycle (connect → list cards → import → roleplay)
-- `bridge/config.ts` — BridgeConfig interface
-- `bridge/types.ts` — Gateway protocol types
-- `windows/petWindow.ts` — Transparent, frameless, always-on-top pet window
-- `windows/chatWindow.ts` — Chat popup window
-- `windows/settingsWindow.ts` — Settings UI window
-- `companion/scheduler.ts` — Idle-triggered proactive messages
-- `companion/triggers.ts` — Trigger conditions
-- `store/settings.ts` — electron-store wrapper, SoulLinkSettings schema
+## Implementation Standards
 
-### IPC Pattern
+- New IPC channels use constants in `electron/ipc.ts` and are documented in the
+  contract comment in `electron/preload.ts`.
+- Preserve cumulative-text semantics for `agent:delta`.
+- Validate IPC inputs and keep complex logic out of handlers.
+- Keep `electron/agent/` free of Electron APIs; integration belongs in `main.ts`.
+- Preserve `SoulLinkAgent` lifecycle and call `dispose()` during shutdown.
+- Use `electron/utils/paths.ts` for resources and database files.
+- Preserve the `0.2.0` settings migration.
+- Preserve `contextIsolation: true`, `nodeIntegration: false`, and the packaged
+  CSP/custom-protocol contract.
+- Keep `sql.js` unpacked from ASAR.
+- Account for macOS and Windows window focus, click-through, tray, and packaging
+  behavior.
 
-```typescript
-// electron/ipc.ts — channel constants
-export const IPC = {
-  BRIDGE_MESSAGE: "bridge:message",
-  BRIDGE_SEND: "bridge:send",
-  // ...
-} as const;
+## Allowed Bash
 
-// Handler pattern
-ipcMain.handle(IPC.SOME_CHANNEL, async (_event, payload: PayloadType) => {
-  try {
-    const result = await someService.doWork(payload);
-    return { success: true, data: result };
-  } catch (error) {
-    return { success: false, error: String(error) };
-  }
-});
+Bash may run `codex exec`, read-only inspection, and verification commands only.
+Do not use redirects, `sed -i`, `tee`, `cp`, `mv`, Node scripts, or any other
+direct source-writing mechanism.
+
+Verification baseline:
+
+```bash
+npx tsc -p tsconfig.node.json --noEmit
+npm test
+npm run build:main
 ```
 
-### Codex Prompt Requirements
-
-Every `codex exec` prompt MUST include:
-
-1. **Goal** — One sentence
-2. **Context** — Relevant file contents (obtained via Read, pasted into prompt)
-3. **Constraints** — Coding standards (see below)
-4. **Acceptance criteria** — What the result should look like
-
-### Coding Standards (include in every codex prompt)
-
-- All IPC channels defined as constants in `electron/ipc.ts`
-- Handlers are single-responsibility; complex logic goes in service layer
-- Error responses use `{ success: boolean, data?: T, error?: string }`
-- File paths use `path.join()` + `app.getPath()` for cross-platform safety
-- `contextIsolation: true` always on, `nodeIntegration: false` always off
-- Preload scripts expose minimal API surface via `contextBridge`
-- No `remote` module usage
-- Validate inputs on all IPC handlers
+There is no ESLint toolchain in this repository.
