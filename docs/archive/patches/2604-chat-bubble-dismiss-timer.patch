@@ -1,0 +1,32 @@
+diff --git a/src/chat/ChatBubbleFeedback.tsx b/src/chat/ChatBubbleFeedback.tsx
+index 2e46609..5143438 100644
+--- a/src/chat/ChatBubbleFeedback.tsx
++++ b/src/chat/ChatBubbleFeedback.tsx
+@@ -71,9 +71,10 @@ export function ChatBubbleFeedback(_props: ChatBubbleFeedbackProps): React.React
+   const startDismissTimer = useCallback(() => {
+     if (isMouseOver.current) return
+     clearDismissTimer()
++    const delay = Math.max(20000, fullTextRef.current.length * 100)
+     dismissTimer.current = setTimeout(() => {
+       setPhase('idle')
+-    }, 20000)
++    }, delay)
+   }, [clearDismissTimer])
+ 
+   // Typewriter: advance one character at a time
+@@ -192,10 +193,15 @@ export function ChatBubbleFeedback(_props: ChatBubbleFeedbackProps): React.React
+ 
+       // Use filtered display text
+       const displayTextClean = filterResult.displayText
++      const prevIndex = typewriterIndex.current
+       fullTextRef.current = displayTextClean
+       setFullText(displayTextClean)
+       phaseRef.current = 'displayed'
+       setPhase('displayed')
++      if (prevIndex > displayTextClean.length) {
++        typewriterIndex.current = displayTextClean.length
++        setDisplayText(displayTextClean)
++      }
+       if (typewriterIndex.current >= displayTextClean.length) {
+         startDismissTimer()
+       } else if (!typewriterTimer.current) {
