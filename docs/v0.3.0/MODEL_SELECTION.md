@@ -61,3 +61,92 @@ M2-her 的 chat completions 接口在 `messages` 含 MiniMax **高级角色**
 3. 用 `conv-*.jsonl` 里的 `oocDetected` / `oocRetryCount` / `emotionTag` 做 A/B：
    同一批话术分别打到 M2-her 与 DeepSeek，比出戏率与 emotion 标签遵循率
    —— 这正是 B1 日志接线的第一个实际用途
+
+---
+
+## 在 CPA 上配置 MiniMax
+
+CPA 是 **CLIProxyAPI**（`router-for-me/CLIProxyAPI`）。确认方式：请求网关根路径会返回
+`{"endpoints":[...],"message":"CLI Proxy API Server"}`；`GET /v1/models` 无鉴权时返回
+`{"error":"Missing API key"}`，说明服务在跑且鉴权生效。
+
+### 先理清两层密钥
+
+这是最容易配错的地方——**有两个不同的 key**：
+
+```
+Soul Link Desktop ──(A)──▶  CPA  ──(B)──▶  MiniMax 开放平台
+```
+
+| | 是什么 | 配在哪 |
+|---|---|---|
+| **A** | 客户端调用 CPA 用的 key | CPA `config.yaml` 顶层的 `api-keys:` 列表；同时填进 app 的 `cpa.apiKey` / `CPA_API_KEY` |
+| **B** | CPA 调用 MiniMax 用的 key | `config.yaml` 的 `openai-compatibility` 里那个 `api-key` |
+
+A 是你自己定的（任意字符串），B 来自 MiniMax 开放平台。两者不要混用。
+
+### config.yaml 片段
+
+```yaml
+port: 8317
+
+# A：允许哪些客户端 key 调用本代理
+api-keys:
+  - "<你自己定的 key，填进 app 的 CPA_API_KEY>"
+
+# B：上游供应商
+openai-compatibility:
+  - name: "minimax"
+    disabled: false
+    base-url: "https://api.minimaxi.com/v1"
+    api-key-entries:
+      - api-key: "<MiniMax 开放平台的 key>"
+    models:
+      - name: "<上游真实模型名>"     # 必须与 MiniMax 返回的 id 完全一致
+        alias: "MiniMax-M2-her"      # 客户端 model 参数用这个名字
+```
+
+`alias` 就是应用侧 `cpa.model` / `CPA_MODEL` 要填的值。`name` 必须与上游一致，
+否则请求会在 CPA 之后才失败，报错会很难读。
+
+### base-url 分区别搞错
+
+MiniMax 分区域，**key 与域名必须配对**，跨区用会直接鉴权失败：
+
+| 账号来源 | base-url |
+|---|---|
+| `platform.minimaxi.com`（国内） | `https://api.minimaxi.com/v1` |
+| `platform.minimax.io`（国际） | `https://api.minimax.io/v1` |
+
+### ⚠️ 上游模型名必须实测，不要照抄
+
+各家渠道的写法不一样（OpenRouter 上是 `minimax/minimax-m2-her`，MiniMax 自家接口
+未必同名）。填之前先直接问 MiniMax：
+
+```bash
+curl -s https://api.minimaxi.com/v1/models \
+  -H "Authorization: Bearer <MiniMax key>" | python3 -m json.tool | grep '"id"'
+```
+
+拿返回里的 id 原样填进 `models[].name`。
+
+### 改完之后
+
+1. CPA 支持热重载配置；不生效就重启服务
+2. 验证别名已挂上（用 **A** 的 key）：
+   ```bash
+   curl -s http://<host>:<port>/v1/models -H "Authorization: Bearer <CPA key>"
+   ```
+   返回里应当出现 `MiniMax-M2-her`
+3. 跑探针，三步全绿再跑集成测试：
+   ```bash
+   CPA_BASE_URL=http://<host>:<port>/v1 CPA_API_KEY=<CPA key> CPA_MODEL=MiniMax-M2-her \
+     node tools/cpa_probe.mjs
+   ```
+
+### 关于「CPA 改版了」
+
+新版 CLIProxyAPI 带了一个 Web 管理面板（配置项 `remote-management`，面板本体是
+`Cli-Proxy-API-Management-Center`），默认 `allow-remote: false` 且需要 `secret-key`。
+如果你记忆里的配置方式变了，多半是因为现在推荐走面板而不是手改 YAML——两条路等价，
+面板改的也是同一份 `config.yaml`。`auth-dir` 默认 `~/.cli-proxy-api`。
