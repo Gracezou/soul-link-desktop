@@ -2,7 +2,7 @@
 
 > 主题：**好好说话** · 范围见 [`RELEASE_PLAN.md`](./RELEASE_PLAN.md)
 > 状态源 [`../EXECUTION_TRACKER.md`](../EXECUTION_TRACKER.md) · Evidence 规范 [`../v0.2.0/PREFLIGHT.md`](../v0.2.0/PREFLIGHT.md) §4
-> 🔴 双重阻塞：Codex CLI 不可用（挡实现）+ CPA 网关重建（挡验收）
+> 🔴 单一阻塞：Codex CLI 不可用（挡实现）。CPA 网关已于 2026-09-12 恢复，验收侧不再受阻
 
 ## C · 功能接线
 
@@ -37,7 +37,7 @@
 ## 建议顺序
 
 ```
-0  等 Codex CLI 与 CPA 恢复
+0  等 Codex CLI 恢复（CPA 已恢复）
 1  C1 广播（小改动，先落地，让 chat 窗口可用）
 2  E1 气泡重做（最大的一块前端工作）
 3  F1 → F2–F7 → F10 → F11

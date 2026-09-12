@@ -25,7 +25,7 @@ Releases are cut by *what a user can install and see*, not by work type. Each re
 | Release | Theme | Needs CPA | Done | Total | Status |
 |---|---|---|---:|---:|---|
 | 0.2.0 | Visible desk pet | **No** | 1 | 9 | `BLOCKED` (Codex CLI) |
-| 0.3.0 | Conversations that work | Yes | 0 | 12 | `BLOCKED` (Codex CLI + CPA) |
+| 0.3.0 | Conversations that work | Yes | 0 | 12 | `BLOCKED` (Codex CLI) |
 | 0.4.0 | Proactive companion | Yes | 0 | 13 | `TODO` |
 
 Group A (documentation and agent metadata) is complete and is **not** a release — it was a preflight gate for the train.
@@ -34,7 +34,9 @@ Group A (documentation and agent metadata) is complete and is **not** a release 
 
 1. **Local Codex CLI cannot complete an implementation run.** `0.136.0`: the default configuration fails to decode the newer `max` reasoning value; the `--ignore-user-config -m gpt-5.5` retry repeatedly loses the sampling connection. Under the repository's mandatory delegated-edit workflow this blocks **every** implementation task in 0.2.0, 0.3.0 and 0.4.0. **Highest-impact blocker — larger than the CPA outage.**
    - Repository side is already clean: the rewritten `electron-dev.md` / `frontend-dev.md` call `codex exec --sandbox workspace-write` with **no hardcoded `--model`** (architect R7 applied in `027eada`). The failure is in the user-level configuration or CLI version, not in repository instructions.
-2. **CPA LLM gateway is being rebuilt.** Blocks 0.3.0 and 0.4.0 verification. **Does not block 0.2.0** — that release was scoped so none of its exit criteria need a live gateway.
+2. ~~CPA LLM gateway is being rebuilt.~~ **Resolved 2026-09-12** — gateway is back up. Verification tasks that only need a live gateway are unblocked; those that also need unshipped implementation stay blocked on the Codex CLI.
+   - **F1 can run right now** against the current `3081f80` source and produce the first post-outage integration baseline. It needs no implementation work and no Codex CLI.
+   - The gateway is a single self-hosted instance that was down for five months. Treat its availability as a dependency that will fail again — that is the standing argument for G1.
 
 ## Preflight — Group A (complete)
 
@@ -71,13 +73,13 @@ Exit criteria need **no LLM gateway**. This is the only release that can proceed
 |---|---|---|---|---|---|---|---|---|
 | C1 | P0 | Broadcast Agent lifecycle events to pet and chat windows | electron-dev | 0.2.0 shipped | Yes | `BLOCKED` | 2026-09-11 | Codex CLI unavailable |
 | E1 | P0 | Rebuild chat bubble state, clock, filtering, errors, dismissal, layout, tests | frontend-dev | 0.2.0 shipped | Yes | `BLOCKED` | 2026-09-11 | Codex CLI unavailable |
-| F1 | P0 | Run live Agent integration tests | test-build | CPA restored | No | `BLOCKED` | 2026-09-11 | CPA unavailable |
-| F2 | P0 | Verify onboarding, first conversation, restart, session persistence | test-build | F1 | No | `BLOCKED` | 2026-09-11 | CPA unavailable |
-| F3 | P0 | Verify streaming bubble behavior and emotion-tag filtering | test-build | F1, E1 | No | `BLOCKED` | 2026-09-11 | CPA unavailable |
-| F4 | P1 | Verify OOC detection and at most two retries | test-build | F1 | No | `BLOCKED` | 2026-09-11 | CPA unavailable |
-| F5 | P1 | Verify compression after more than 30 messages | test-build | F1 | No | `BLOCKED` | 2026-09-11 | CPA unavailable |
-| F6 | P1 | Verify cross-session memory recall | test-build | F1 | No | `BLOCKED` | 2026-09-11 | CPA unavailable |
-| F7 | P0 | Verify network, credential, and waiting-timeout error paths | test-build | F1, E1 | No | `BLOCKED` | 2026-09-11 | CPA unavailable |
+| F1 | P0 | Run live Agent integration tests | test-build | CPA restored | No | `TODO` | 2026-09-11 | Gateway restored; can run now against current source for a baseline |
+| F2 | P0 | Verify onboarding, first conversation, restart, session persistence | test-build | F1 | No | `TODO` | 2026-09-11 | Depends on F1 only |
+| F3 | P0 | Verify streaming bubble behavior and emotion-tag filtering | test-build | F1, E1 | No | `BLOCKED` | 2026-09-12 | Blocked on E1, not on the gateway |
+| F4 | P1 | Verify OOC detection and at most two retries | test-build | F1 | No | `TODO` | 2026-09-11 | Depends on F1 only |
+| F5 | P1 | Verify compression after more than 30 messages | test-build | F1 | No | `TODO` | 2026-09-11 | Depends on F1 only |
+| F6 | P1 | Verify cross-session memory recall | test-build | F1 | No | `TODO` | 2026-09-11 | Depends on F1 only |
+| F7 | P0 | Verify network, credential, and waiting-timeout error paths | test-build | F1, E1 | No | `BLOCKED` | 2026-09-12 | Blocked on E1, not on the gateway |
 
 ## Release 0.4.0 — Proactive Companion
 
@@ -121,3 +123,4 @@ Exit criteria need **no LLM gateway**. This is the only release that can proceed
 | 2026-09-11 | Group A committed as `027eada`; docs restructure as `e6a26e7`. Prior `DONE` entries carried no commit id, so a cross-worktree audit at `3081f80` reported A4 as stale. Commit id is now required Evidence for `REVIEW`/`DONE`. See `v0.2.0/PREFLIGHT.md`. |
 | 2026-09-11 | Single v0.2.0 release split into the 0.2.0 / 0.3.0 / 0.4.0 train, cut by installable user-visible value. Tracker moved to `docs/` and scoped across all three. Added G1 (onboarding soft gate) — without it 0.2.0 cannot be accepted while CPA is down. Both commits moved off `master` onto `release/0.2.0`. |
 | 2026-09-11 | D0 sprite tooling landed under `tools/` (slicer + checker, Pillow only). Unblocks D1 asset production, which does not depend on the Codex CLI. |
+| 2026-09-12 | CPA gateway restored. F1/F2/F4/F5/F6 unblocked (F1 runnable immediately for a baseline); F3/F7 remain blocked on E1. Codex CLI is now the **only** blocker holding implementation. Gateway URL deliberately kept out of the repository — see `v0.2.0/TODO.md` F1. |

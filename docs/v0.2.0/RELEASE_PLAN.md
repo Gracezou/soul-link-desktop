@@ -57,7 +57,13 @@ electron-store migration 以 `package.json` 的 `version` 为准。**版本停�
 | **G1** | **onboarding 硬门禁改软门禁**（新增） | 见下，否则本版本无法验收 |
 | F8/F9 | bump `0.2.0` + 验证 legacy migration | 首个发布版必须过这一关 |
 
-### 🔑 G1 是本版本能否成立的关键
+### 🔑 G1 —— 网关恢复后重新评估
+
+> **2026-09-12 更新**：CPA 已恢复，所以「引导页过不去导致 0.2.0 无法验收」这条理由**当下不再成立**——
+> 现在全新安装能正常通过连接测试。G1 从「阻塞验收」降为「健壮性修复」。
+> 但**建议仍留在 0.2.0**：网关是单台自建实例，刚刚宕了五个月，还会再宕；
+> 下次宕机时所有新用户依旧被永久挡在门外。这正是过去五个月的教训本身。
+> 若想更快发版，可把 G1 移到 0.3.0——这是范围取舍，不是技术障碍。
 
 `src/onboarding/ConnectionStep.tsx:53` 是 `canProceed = testResult?.success === true`，配合 `onboardingGuard.needsOnboarding()`（`cpa.baseUrl` 或 `apiKey` 为空即强制引导）——**连接测试不通过，用户永远出不了引导页**。
 
@@ -95,4 +101,4 @@ electron-store migration 以 `package.json` 的 `version` 为准。**版本停�
 ## 已知阻塞
 
 - 🔴 **本地 Codex CLI 无法完成实现运行**（见 [`PREFLIGHT.md`](./PREFLIGHT.md) §7）—— 仓库强制委派写码，这条不解，B1/C2/G1 一行都写不了。**当前最高优先级阻塞，影响面大于 CPA 下线**
-- 🟡 CPA 网关重建中 —— **不影响本版本**，只影响 0.3.0 / 0.4.0
+- ✅ CPA 网关已于 2026-09-12 恢复 —— 本版本本就不依赖它，该设计现在成了冗余保障而非必需

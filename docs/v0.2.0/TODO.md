@@ -4,7 +4,8 @@
 > **本文件是需求与验收标准，不是状态源。** 状态以 [`../EXECUTION_TRACKER.md`](../EXECUTION_TRACKER.md) 为唯一来源，
 > 状态定义与 Evidence 规范见 [`PREFLIGHT.md`](./PREFLIGHT.md) §4（`DONE` 必须带提交号）
 > 缺陷证据见 [`../ARCHITECTURE.md`](../ARCHITECTURE.md) §9
-> 🔴 当前阻塞：本地 Codex CLI 不可用，B1 / C2 / G1 无法开工（见 `PREFLIGHT.md` §7）
+> 🔴 当前唯一阻塞：本地 Codex CLI 不可用，B1 / C2 / G1 无法开工（见 `PREFLIGHT.md` §7）
+> ✅ CPA 网关 2026-09-12 已恢复
 
 ## 前置（已完成）
 
@@ -47,9 +48,9 @@
 
 ## G · 引导流程
 
-- [ ] **G1** onboarding 硬门禁改软门禁 —— **本版本能否验收的关键**
+- [ ] **G1** onboarding 硬门禁改软门禁 —— 健壮性修复（原为验收阻塞项，CPA 恢复后降级，见 RELEASE_PLAN）
   - 现状 `src/onboarding/ConnectionStep.tsx:53` `canProceed = testResult?.success === true`，配合 `onboardingGuard.needsOnboarding()`（`cpa.baseUrl` 或 `apiKey` 为空即强制引导）⇒ **连接测试不通过就永远出不了引导页**
-  - 后果一：CPA 重建期间全新安装走不到桌宠界面，本版本退出标准第 2 条无法达成
+  - 后果一（2026-09-12 已缓解）：网关下线期间全新安装走不到桌宠界面。CPA 已恢复，当下不再阻塞验收
   - 后果二：网关一挂，所有新用户被永久挡在门外，连桌宠长什么样都看不到
   - 改法：引导页加「稍后配置」出口 → 进主界面；桌宠可见可拖，聊天入口给「未配置」提示；`needsOnboarding()` 改为只看 `onboarding.completed`
   - 跨 `electron/` + `src/` ⇒ 先走 architect 定接口 · 代理 `electron-dev` + `frontend-dev`
@@ -67,7 +68,14 @@
 - [ ] **F10.5** `CHANGELOG.md` 定版为 `0.2.0`
 - [ ] **F11** `git tag v0.2.0 && git push --tags`
 
-**本版本所有验证项均不需要 LLM 网关。**
+**本版本所有验证项均不需要 LLM 网关**（这条设计保持不变，网关恢复只是让它从必需变成冗余保障）。
+
+### 可立即执行（不依赖 Codex CLI）
+
+- [ ] **F1-baseline** 网关恢复后对**当前源码**跑一次集成测试，拿到停更后的第一份基线：
+      `CPA_API_KEY=<key> npm run test:integration`
+      归属 0.3.0 的 F1，但现在就能跑，且能验证 LLM 客户端、SSE 流式、压缩、记忆四条链路是否还活着
+      ⚠️ **网关地址与 API key 都不要写进仓库**：地址是自建实例的公网 IP，仓库可能公开；key 只走环境变量与本机 settings
 
 ## 建议顺序
 
