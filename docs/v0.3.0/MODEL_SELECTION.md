@@ -144,6 +144,28 @@ curl -s https://api.minimaxi.com/v1/models \
      node tools/cpa_probe.mjs
    ```
 
+### 用管理面板配（等价于改 YAML）
+
+新版带 Web 管理面板（`Cli-Proxy-API-Management-Center`），在「AI 提供商 → OpenAI 兼容」
+新建条目。面板字段与 `config.yaml` 一一对应：
+
+| 面板字段 | YAML 键 | 说明 |
+|---|---|---|
+| 服务地址 | `base-url` | 必须与 key 的区域配对，见上 |
+| 前缀 | `prefix` | **留空**。填了模型名会变成 `前缀/别名`，客户端的 `CPA_MODEL` 得跟着改 |
+| 优先级 | `priority` | 多供应商时的路由顺序，单供应商留空 |
+| API 密钥条目 | `api-key-entries` | 每条右侧有「测试」按钮 |
+| 调度权重 | 权重 | 多 key 轮询用，单 key 保持 1 |
+| **模型** | `models` | 在同一弹窗内、**API 密钥条目下方**（YAML 里 `models` 也排在 `api-key-entries` 之后） |
+
+模型区支持**从上游 `/v1/models` 拉取并导入别名**——直接用这个，省掉手抄模型名，
+也就不会踩「渠道写法不一致」的坑。拉不到再手填 `name`（上游真实 id）+ `alias`（客户端用名）。
+
+「测试模型」下拉显示「自动(尚未添加模型)」就是因为模型列表还是空的，加完即可选。
+
+**排查顺序**：先点密钥的「测试」。它过不了，说明是区域/密钥问题（最常见是国内 key 配了
+`api.minimax.io`，或反过来），而不是面板问题；模型列表拉不到通常也是同一个原因。
+
 ### 关于「CPA 改版了」
 
 新版 CLIProxyAPI 带了一个 Web 管理面板（配置项 `remote-management`，面板本体是
