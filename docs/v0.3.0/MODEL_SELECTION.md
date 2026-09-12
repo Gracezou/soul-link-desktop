@@ -208,14 +208,48 @@ CPA 支持配置多个 openai-compatibility 供应商，A/B/C 不互斥——可
 对桌宠来说**延迟是产品特性**：气泡 30ms/字，生成速度跟不上就会卡顿断续。
 60 tps 勉强够，100 tps 才有余量。所以同能力优先 highspeed。
 
-### ⚠️ 走 C 必须先验一件事：思维链会不会漏进气泡
+### ⚠️ 走 C 的实测结论：思维链确实会漏（2026-09-12）
 
-M2.x 是推理/Agentic 系列，可能在响应里带 thinking 内容（`reasoning_content` 字段
-或 `<think>` 块）。现有的 `protocolFilter` 只处理 `[emotion:xxx]` 标签与系统消息判定，
-**没有任何东西过滤思维链**——一旦漏出来，用户会看到角色开始自言自语做分析。
+**已实测确认**。`MiniMax-M2.7-highspeed` 经 CPA 返回的 content 开头就是：
 
-`tools/cpa_probe.mjs` 第 2、3 步会把原始响应与流式文本打出来，**接线前先看一眼**。
-如果确实有：要么找参数关闭 thinking，要么在 E1 气泡重做里补一条过滤规则（属 E1 范围）。
+```
+<think>\nThe user says "回复两个字：收到". This i...
+```
+
+思维链**直接混在 `content` 里**，而且是英文。现有的 `protocolFilter` 只处理
+`[emotion:xxx]` 标签与系统消息判定，**没有任何东西过滤 `<think>`**。直接接线的后果：
+
+1. 用户在气泡里看到角色用英文自言自语做分析
+2. `isSystemMessage` / `checkOutOfCharacter` 很可能把这段判成出戏 → 触发 OOC 重试 →
+   同一条消息付三遍钱
+3. 计费：一句「回复两个字：收到」消耗 completion 32 token，绝大部分是思维链
+
+**关不掉。** MiniMax 官方的 Anthropic 兼容契约明确写着 M2.x 的 thinking 不可关闭——
+`thinking: {type:"disabled"}` 会被接受但无效。存在一个非标准参数 `reasoning_split: true`，
+作用是把思维链从 `content` 挪进独立的 `reasoning_content` 字段（**仍然计费、仍然占首字延迟**，
+只是不再污染正文）。
+
+`tools/cpa_probe.mjs` 现在会自动检测思维链，并在检测到时自动重试一次带 `reasoning_split`，
+直接告诉你 content 有没有变干净。
+
+**两手都要**：
+- 请求侧：`reasoning_split` 有效的话，在 `llm-client.ts` 的请求体里固定带上
+- 客户端侧：仍要在过滤管线里加 `<think>` 剥离（归入 E1），流式还需处理半截标签——
+  与现有 `stripPartialTag` 是同一类问题
+
+### 延迟实测
+
+| 指标 | 实测值 |
+|---|---|
+| `/v1/models` | 816ms |
+| 非流式一次往返（2 字回复） | 2777ms |
+| 流式首字延迟 | **1246ms** |
+| 流式总耗时 | 2752ms |
+| delta 数（约 10 token 回复） | 5 |
+
+首字 1.2 秒意味着桌宠要先转 1.2 秒「···」才开口，而且思维链排在可见正文之前，
+**真正的第一个可见字符还要更晚**。这是推理模型的固有代价，也是 M2-her 那类对话专用模型
+的隐性价值——它本来就不做这套。
 
 ### 顺带：上下文预算可以放开了
 

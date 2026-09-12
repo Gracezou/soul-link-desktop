@@ -90,6 +90,24 @@ const headers = {
 }
 
 let failed = 0
+let thinkingSeen = false
+
+const THINK_TAG = /<think>|<\/think>|<thinking>|\[思考\]/i
+
+function reportThinking(where, content, parsed) {
+  const inline = typeof content === 'string' && THINK_TAG.test(content)
+  const separate = parsed && (parsed.reasoning_content || parsed.choices?.[0]?.message?.reasoning_content ||
+                              parsed.choices?.[0]?.delta?.reasoning_content)
+  if (inline) {
+    thinkingSeen = true
+    console.log(`        !! ${where}: 思维链混在 content 里（<think> 标签）`)
+  }
+  if (separate) {
+    thinkingSeen = true
+    console.log(`        ~~ ${where}: 思维链在独立的 reasoning_content 字段里（content 干净）`)
+  }
+  return inline
+}
 
 const ok = (label, detail = '') => console.log(`  PASS  ${label}${detail ? '  ' + detail : ''}`)
 const bad = (label, detail = '') => {
@@ -178,6 +196,7 @@ try {
       ok('got content', `${ms}ms  ${JSON.stringify(content.slice(0, 40))}`)
       const usage = data.usage
       if (usage) console.log(`        usage: prompt ${usage.prompt_tokens}, completion ${usage.completion_tokens}`)
+      reportThinking('非流式', content, data)
     } else {
       bad('response has no choices[0].message.content', JSON.stringify(data).slice(0, 300))
     }
@@ -246,9 +265,12 @@ try {
     if (deltas > 0) {
       ok(`${deltas} delta(s)`, `first delta ${firstDeltaMs}ms, total ${totalMs}ms`)
       console.log(`        text: ${JSON.stringify(full.slice(0, 60))}`)
+      reportThinking('流式', full, null)
       if (!sawDone) console.log('        note: stream ended without a [DONE] frame')
-      if (deltas === 1) console.log('        note: only one delta — the gateway may be buffering the whole reply,')
-      console.log('              which makes the typewriter bubble jump instead of type')
+      if (deltas === 1) {
+        console.log('        note: only one delta — the gateway may be buffering the whole reply,')
+        console.log('              which makes the typewriter bubble jump instead of type')
+      }
     } else {
       bad('no content deltas parsed from the SSE stream')
     }
@@ -257,7 +279,57 @@ try {
   bad('request failed', String(err.message ?? err))
 }
 
+// 4 — thinking mitigation
+if (thinkingSeen) {
+  console.log('\n4. 思维链缓解：重试并带上 reasoning_split: true')
+  console.log('   （MiniMax M2.x 官方契约说 thinking 无法关闭；reasoning_split 只是把它')
+  console.log('     从 content 里挪进独立字段——仍然计费、仍然占首字延迟）')
+  try {
+    const t0 = Date.now()
+    const res = await withTimeout((signal) =>
+      fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers,
+        signal,
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: '回复两个字：收到' }],
+          stream: false,
+          max_tokens: 64,
+          reasoning_split: true,
+        }),
+      })
+    )
+    const ms = Date.now() - t0
+    const text = await res.text()
+    if (!res.ok) {
+      console.log(`  FAIL  HTTP ${res.status}  ${redact(text).slice(0, 200)}`)
+      console.log('        -> 该参数不被接受，只能在客户端过滤 <think>')
+    } else {
+      const data = JSON.parse(text)
+      const content = data?.choices?.[0]?.message?.content ?? ''
+      const stillInline = THINK_TAG.test(content)
+      console.log(`  ${stillInline ? 'FAIL' : 'PASS'}  content ${stillInline ? '仍含 <think>' : '已干净'}` +
+                  `  ${ms}ms  ${JSON.stringify(content.slice(0, 40))}`)
+      if (data?.choices?.[0]?.message?.reasoning_content) {
+        console.log('        思维链已分离到 reasoning_content')
+      }
+      if (!stillInline) {
+        console.log('        -> 建议在 llm-client.ts 的请求体里固定带上 reasoning_split: true')
+      } else {
+        console.log('        -> 仍需在客户端过滤 <think>（归入 E1 气泡重做）')
+      }
+    }
+  } catch (err) {
+    console.log(`  FAIL  request failed  ${String(err.message ?? err)}`)
+  }
+}
+
 console.log()
+if (thinkingSeen) {
+  console.log('注意：该模型会产出思维链。接线前请确认 content 已干净，')
+  console.log('      否则用户会在气泡里看到角色自言自语做分析。')
+}
 if (failed) {
   console.log(`FAILED — ${failed} check(s). Fix the gateway or the config before running the integration suite.`)
   process.exit(1)
