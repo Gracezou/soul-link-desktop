@@ -21,7 +21,43 @@
  * ends up silently talking to the wrong server.
  */
 
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+/**
+ * Load KEY=VALUE pairs from a .env file into process.env.
+ *
+ * Deliberately self-contained and shell-agnostic: `set -a; source .env.local`
+ * is bash syntax and fails outright under fish, which is exactly the kind of
+ * incidental breakage that should not stand between someone and a test run.
+ * Existing environment variables always win, so an inline `FOO=bar node ...`
+ * still overrides the file.
+ */
+function loadEnvFile(filePath) {
+  if (!existsSync(filePath)) return false
+  for (const rawLine of readFileSync(filePath, 'utf8').split(/\r?\n/)) {
+    const line = rawLine.trim()
+    if (!line || line.startsWith('#')) continue
+    const eq = line.indexOf('=')
+    if (eq <= 0) continue
+    const key = line.slice(0, eq).trim()
+    let value = line.slice(eq + 1).trim()
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1)
+    }
+    if (value.includes('<') && value.includes('>')) continue   // untouched placeholder
+    if (!value) continue
+    if (process.env[key] === undefined || process.env[key] === '') process.env[key] = value
+  }
+  return true
+}
+
 const args = process.argv.slice(2)
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const envPathIndex = args.indexOf('--env')
+const envPath = envPathIndex >= 0 ? resolve(args[envPathIndex + 1]) : resolve(repoRoot, '.env.local')
+const envLoaded = loadEnvFile(envPath)
 const flag = (name) => {
   const i = args.indexOf(`--${name}`)
   return i >= 0 ? args[i + 1] : undefined
@@ -40,7 +76,11 @@ const missing = [
 
 if (missing.length) {
   console.error(`missing: ${missing.join(', ')}`)
-  console.error('\nCPA_BASE_URL=http://<host>:<port>/v1 CPA_API_KEY=<key> CPA_MODEL=<model> node tools/cpa_probe.mjs')
+  console.error(envLoaded
+    ? `\nRead ${envPath}, but those values are still empty or left as <placeholders>. Fill them in.`
+    : `\nNo ${envPath} found.  cp .env.example .env.local  then fill it in.`)
+  console.error('\nOr pass them inline:')
+  console.error('  CPA_BASE_URL=http://<host>:<port>/v1 CPA_API_KEY=<key> CPA_MODEL=<model> node tools/cpa_probe.mjs')
   process.exit(1)
 }
 
@@ -74,6 +114,7 @@ function redact(text) {
 console.log(`gateway  ${baseUrl}`)
 console.log(`model    ${model}`)
 console.log(`timeout  ${timeoutMs}ms`)
+if (envLoaded) console.log(`env      ${envPath}`)
 console.log()
 
 // 1 — GET /models
