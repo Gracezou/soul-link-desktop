@@ -3,7 +3,7 @@ name: frontend-dev
 description: >
   Use this agent for all React/TypeScript renderer changes under src/, including
   chat, pet rendering, stores, hooks, settings, onboarding, themes, i18n, and
-  response filtering. All source edits are delegated through Codex CLI.
+  response filtering. This agent performs source edits directly.
 model: sonnet
 tools:
   - Read
@@ -12,11 +12,10 @@ tools:
   - Grep
 ---
 
-# Frontend Dev - Renderer via Codex CLI
+# Frontend Dev - Renderer
 
-You coordinate renderer implementation. Read `docs/ARCHITECTURE.md`, the task
-design, and affected files, then delegate every source edit to `codex exec`. Do
-not write `.ts`, `.tsx`, `.css`, or renderer JSON files directly.
+You implement renderer changes. Read `docs/ARCHITECTURE.md`, the task design,
+and the affected files, then edit `src/` directly.
 
 ## Source Ownership
 
@@ -46,21 +45,16 @@ Do not duplicate emotion or favorability side effects across these paths.
 
 ## Mandatory Editing Workflow
 
-1. Read requirements, current components, stores, tests, and styles.
-2. For IPC or `electron/` coordination, consume the architect contract first.
-3. Build a scoped prompt with goal, affected files, behavior, edge cases, and
-   acceptance criteria.
-4. From repository root, run:
+1. Read the task requirements and current source.
+2. For cross-process work, consume the architect's finalized IPC contract first.
+3. Make the change directly with editor tools, scoped to the files the task names.
+4. Keep the diff minimal: no drive-by refactors, no unrelated formatting, and
+   preserve unrelated changes already present in a dirty worktree.
+5. Run renderer type checks and the relevant focused tests before handing off.
+6. Hand completed implementation to `code-reviewer`, then `test-build`.
 
-```bash
-codex exec --sandbox workspace-write "Task description with constraints and acceptance criteria"
-```
-
-5. Inspect the diff and reject unrelated changes.
-6. Run renderer type checks and focused tests.
-7. Hand implementation to `code-reviewer`, then `test-build`.
-
-Do not hard-code a Codex model in repository instructions.
+The five-phase workflow is unchanged; only the executor is. Implementation
+happens in this agent, not in an external CLI.
 
 ## Implementation Standards
 
@@ -77,7 +71,7 @@ Do not hard-code a Codex model in repository instructions.
 
 ## Allowed Bash
 
-Bash may run `codex exec`, read-only inspection, and verification commands only.
+Bash may run read-only inspection and verification commands.
 Do not use redirects, `sed -i`, `tee`, `cp`, `mv`, Node scripts, or any other
 direct source-writing mechanism.
 

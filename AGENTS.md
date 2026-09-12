@@ -197,7 +197,7 @@ All source changes follow these phases:
 2. `architect` defines contracts for IPC, new processes/windows, module-boundary
    changes, or work spanning `electron/` and `src/`.
 3. `electron-dev` exclusively changes `electron/`; `frontend-dev` exclusively
-   changes `src/`, both through `codex exec`.
+   changes `src/`. Both edit source directly.
 4. `code-reviewer` reviews completed implementation. P0 findings return to the
    relevant implementation agent before re-review.
 5. `test-build` runs renderer/main type checks, unit tests, and renderer/main

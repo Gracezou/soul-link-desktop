@@ -4,8 +4,7 @@
 > **本文件是需求与验收标准，不是状态源。** 状态以 [`../EXECUTION_TRACKER.md`](../EXECUTION_TRACKER.md) 为唯一来源，
 > 状态定义与 Evidence 规范见 [`PREFLIGHT.md`](./PREFLIGHT.md) §4（`DONE` 必须带提交号）
 > 缺陷证据见 [`../ARCHITECTURE.md`](../ARCHITECTURE.md) §9
-> 🔴 当前唯一阻塞：本地 Codex CLI 不可用，B1 / C2 / G1 无法开工（见 `PREFLIGHT.md` §7）
-> ✅ CPA 网关 2026-09-12 已恢复
+> ✅ 2026-09-12：CPA 网关恢复；委派 Codex 写码的强制约束已取消（实现代理直接改源码）。**当前无阻塞。**
 
 ## 前置（已完成）
 
@@ -72,16 +71,25 @@
 
 ### 可立即执行（不依赖 Codex CLI）
 
-- [ ] **F1-baseline** 网关恢复后对**当前源码**跑一次集成测试，拿到停更后的第一份基线：
-      `CPA_API_KEY=<key> npm run test:integration`
+- [ ] **V0** 先给网关配模型 —— 目前未配。建议与证据见 [`../v0.3.0/MODEL_SELECTION.md`](../v0.3.0/MODEL_SELECTION.md)
+- [ ] **F1-baseline** 对**当前源码**跑一次集成测试，拿到停更后的第一份基线：
+
+      ```bash
+      # 先探网关：可达性 / 鉴权 / 模型是否存在 / SSE 流式
+      CPA_BASE_URL=http://<host>:<port>/v1 CPA_API_KEY=<key> CPA_MODEL=<model> \
+        node tools/cpa_probe.mjs
+      # 探通了再跑
+      CPA_BASE_URL=... CPA_API_KEY=... CPA_MODEL=... npm run test:integration
+      ```
       归属 0.3.0 的 F1，但现在就能跑，且能验证 LLM 客户端、SSE 流式、压缩、记忆四条链路是否还活着
+      ⚠️ `CPA_BASE_URL` 现在**必填**：旧的默认值指向已停用的主机，漏设会静默打到错误的服务器而不是 skip
       ⚠️ **网关地址与 API key 都不要写进仓库**：地址是自建实例的公网 IP，仓库可能公开；key 只走环境变量与本机 settings
 
 ## 建议顺序
 
 ```
-0  解 Codex CLI 阻塞        ← 不解则 B1/C2/G1 一行都写不了
-1  B1 日志接线              ← 后续排查基座
+0  V0 配模型 → cpa_probe → F1 基线   ← 不依赖任何实现，先拿到事实
+1  B1 日志接线              ← 后续排查基座，也是模型 A/B 的证据来源
 2  D1 八帧精灵（可与 1 并行，不走 codex）
 3  G1 软门禁 → 才能验收「全新安装看见桌宠」
 4  C2 CSP（需 D1 产出才能真正验证）

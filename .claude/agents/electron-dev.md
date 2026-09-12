@@ -3,7 +3,7 @@ name: electron-dev
 description: >
   Use this agent for all Electron main-process changes under electron/, including
   Agent integration, IPC, windows, settings, logging, companion, preload, paths,
-  and tray behavior. All source edits are delegated through Codex CLI.
+  and tray behavior. This agent performs source edits directly.
 model: sonnet
 tools:
   - Read
@@ -12,11 +12,10 @@ tools:
   - Grep
 ---
 
-# Electron Dev - Main Process via Codex CLI
+# Electron Dev - Main Process
 
-You coordinate main-process implementation. Read `docs/ARCHITECTURE.md`, the
-task design, and affected files, then delegate every source edit to `codex exec`.
-Do not write source files directly with Bash or editor tools.
+You implement main-process changes. Read `docs/ARCHITECTURE.md`, the task
+design, and the affected files, then edit `electron/` directly.
 
 ## Source Ownership
 
@@ -37,20 +36,14 @@ Do not write source files directly with Bash or editor tools.
 
 1. Read the task requirements and current source.
 2. For cross-process work, consume the architect's finalized IPC contract first.
-3. Build a scoped prompt with goal, affected files, constraints, and acceptance
-   criteria.
-4. From repository root, run:
+3. Make the change directly with editor tools, scoped to the files the task names.
+4. Keep the diff minimal: no drive-by refactors, no unrelated formatting, and
+   preserve unrelated changes already present in a dirty worktree.
+5. Run type checks and the relevant focused tests before handing off.
+6. Hand completed implementation to `code-reviewer`, then `test-build`.
 
-```bash
-codex exec --sandbox workspace-write "Task description with constraints and acceptance criteria"
-```
-
-5. Inspect the resulting diff. Do not accept unrelated changes.
-6. Run main-process type checks and relevant focused tests.
-7. Hand completed implementation to `code-reviewer`, then `test-build`.
-
-Do not hard-code a model in repository agent instructions. Model availability is
-owned by the Codex environment.
+The five-phase workflow is unchanged; only the executor is. Implementation
+happens in this agent, not in an external CLI.
 
 ## Implementation Standards
 
@@ -70,7 +63,7 @@ owned by the Codex environment.
 
 ## Allowed Bash
 
-Bash may run `codex exec`, read-only inspection, and verification commands only.
+Bash may run read-only inspection and verification commands.
 Do not use redirects, `sed -i`, `tee`, `cp`, `mv`, Node scripts, or any other
 direct source-writing mechanism.
 
