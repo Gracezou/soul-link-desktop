@@ -4,7 +4,16 @@
 > 那是一个通用模型，且当时的选型依据已经过时五个月。
 > 本文件是**建议**，不是已决事项。定下来后回填到 `settings.json` 的 `cpa.model` 与 `CPA_MODEL`。
 
-## 结论：优先试 MiniMax **M2-her**
+## ⚠️ 区域可用性更正（2026-09-12 实测）
+
+**M2-her 不在国际站（`api.minimax.io`）的模型目录里。** 实测该站 text 模型只有
+M3 / M2.7 / M2.7-highspeed / M2.5 / M2.5-highspeed / M2.1 / M2.1-highspeed / M2 / Text-01，
+全部是 agentic / coding / long-context 定位，没有任何角色扮演专用模型。
+
+M2-her 确实存在（2026-01-23 上线），但仅见于国内站与 OpenRouter 等聚合渠道。
+下面的评估依然成立，**但要先解决拿得到拿不到**，见文末「实际可选路径」。
+
+## 首选（若拿得到）：MiniMax **M2-her**
 
 | | |
 |---|---|
@@ -172,3 +181,44 @@ curl -s https://api.minimaxi.com/v1/models \
 `Cli-Proxy-API-Management-Center`），默认 `allow-remote: false` 且需要 `secret-key`。
 如果你记忆里的配置方式变了，多半是因为现在推荐走面板而不是手改 YAML——两条路等价，
 面板改的也是同一份 `config.yaml`。`auth-dir` 默认 `~/.cli-proxy-api`。
+
+---
+
+## 实际可选路径（2026-09-12）
+
+| 路径 | 做法 | 取舍 |
+|---|---|---|
+| **A. 国内站** | 用 `platform.minimaxi.com` 账号 + `https://api.minimaxi.com/v1`，先 curl `/v1/models` 确认 M2-her 是否上架 | 拿得到就是最优解；注意 key 与域名必须同区 |
+| **B. OpenRouter** | 在 CPA 里再加一条 openai-compatibility 供应商，`base-url: https://openrouter.ai/api/v1`，模型 `minimax/minimax-m2-her` | 确定能拿到；多一跳延迟与一层加价，但顺带获得跨厂商 A/B 的能力 |
+| **C. 就用国际站现有的** | 从 M2.x 里选，见下 | 立刻能跑，但都是通用模型，人设全靠 prompt + OOC 重试顶 |
+
+CPA 支持配置多个 openai-compatibility 供应商，A/B/C 不互斥——可以同时挂上，
+用不同 alias 区分，靠 `cpa.model` 一键切换做对比。这正是当初保留 CPA 这层代理的意义。
+
+### 走 C 的话选哪个
+
+| 模型 | 上下文 | 输出速度 | 评价 |
+|---|---|---|---|
+| **M2.7-highspeed** | 204,800 | ~100 tps | **推荐默认**：2.x 线最新，且 100 tps 对打字机气泡的手感是实打实的差别 |
+| M2.5-highspeed | 204,800 | ~100 tps | 性价比备选 |
+| M2.7 / M2.5 | 204,800 | ~60 tps | 同能力但慢一档，没有理由选 |
+| M2.1 系列 | 204,800 | — | 明确定位编程，不考虑 |
+| M3 | 1,000,000 | — | agentic / 多模态 / 超长上下文，本场景用不上那 1M，大概率更贵 |
+
+对桌宠来说**延迟是产品特性**：气泡 30ms/字，生成速度跟不上就会卡顿断续。
+60 tps 勉强够，100 tps 才有余量。所以同能力优先 highspeed。
+
+### ⚠️ 走 C 必须先验一件事：思维链会不会漏进气泡
+
+M2.x 是推理/Agentic 系列，可能在响应里带 thinking 内容（`reasoning_content` 字段
+或 `<think>` 块）。现有的 `protocolFilter` 只处理 `[emotion:xxx]` 标签与系统消息判定，
+**没有任何东西过滤思维链**——一旦漏出来，用户会看到角色开始自言自语做分析。
+
+`tools/cpa_probe.mjs` 第 2、3 步会把原始响应与流式文本打出来，**接线前先看一眼**。
+如果确实有：要么找参数关闭 thinking，要么在 E1 气泡重做里补一条过滤规则（属 E1 范围）。
+
+### 顺带：上下文预算可以放开了
+
+`AgentConfig.maxTotalTokens` 目前是 **8000**，而这批模型都是 204,800。
+上调后能少触发 `compressor` 的摘要压缩，长会话的人设连续性更好。
+建议拿到 F1 基线后再调，好有个对比基准。
