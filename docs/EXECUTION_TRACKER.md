@@ -56,7 +56,7 @@ Exit criteria need **no LLM gateway**. This is the only release that can proceed
 
 | ID | Priority | Task | Owner | Depends On | Parallel | Status | Updated | Evidence |
 |---|---|---|---|---|---|---|---|---|
-| B1 | P0 | Wire `initLogging()` at startup and `shutdownLogging()` at exit | electron-dev | None | Yes | `TODO` | 2026-09-12 | Unblocked — implement directly. First real use: A/B model evidence via `conv-*.jsonl` |
+| B1 | P0 | Wire `initLogging()` at startup and `shutdownLogging()` at exit | electron-dev | None | Yes | `TODO` | 2026-09-12 | **Now blocks model selection**: F1 showed every conclusion had to be reverse-engineered from console output because no JSONL is written. `oocRetryCount` / `emotionTag` / token stats needed for the M2.7-vs-M2-her comparison all live in `conv-*.jsonl` |
 | D1 | P0 | Produce and validate eight initial sprite frames | asset agent | None | Yes | `TODO` | 2026-09-11 | Not started — does not require Codex CLI |
 | G1 | P0 | Replace the hard onboarding gate with a "configure later" path | architect, electron-dev, frontend-dev | None | No | `TODO` | 2026-09-11 | Not started — blocks exit criterion 2 |
 | C2 | P0 | Allow `res:` in packaged CSP; narrow renderer network sources | electron-dev | B1, D1 | Yes | `TODO` | 2026-09-11 | Not started — needs D1 output for real verification |
@@ -125,3 +125,4 @@ Exit criteria need **no LLM gateway**. This is the only release that can proceed
 | 2026-09-12 | CPA gateway restored. F1/F2/F4/F5/F6 unblocked (F1 runnable immediately for a baseline); F3/F7 remain blocked on E1. Codex CLI is now the **only** blocker holding implementation. Gateway URL deliberately kept out of the repository — see `v0.2.0/TODO.md` F1. |
 | 2026-09-12 | Delegated-edit-via-Codex requirement removed from `CLAUDE.md`, `AGENTS.md`, `electron-dev.md`, `frontend-dev.md`. Implementation agents now edit source directly; phases unchanged. No blockers remain on implementation. |
 | 2026-09-12 | Added V0 (gateway model selection) with `v0.3.0/MODEL_SELECTION.md`. Integration harness hardened: `tests/integration/helpers.ts` no longer carries a stale default base URL, and `tools/cpa_probe.mjs` checks reachability, auth, model availability and SSE streaming before the suite runs. |
+| 2026-09-12 | V0 done: `MiniMax-M2.7-highspeed` configured via CPA. F1 partially run — `agent-pipeline` PASS, first end-to-end success since April. Two findings recorded in `v0.3.0/F1-BASELINE.md`: thinking did not trigger OOC retry (by luck, not design — the pattern `as an assistant` can still match reasoning text), and memory extraction races `dispose()` so it likely never lands in tests. |

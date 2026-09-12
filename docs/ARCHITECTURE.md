@@ -287,4 +287,6 @@ src/                 渲染进程（ESM，vite → dist/），单 HTML 按 ?page
 | P2 | `settings:set` 后热更新 Agent / Companion / 角色（消除强制重启） | §5 |
 | P2 | i18n OpenClaw 文案替换；删除 `settingsStore.ts` 死代码 | §9-A11/12 |
 | P2 | legacy 测试迁入 `tests/unit/` 或扩大 `npm test` 范围；引入 ESLint 工具链 | R8 |
+| P1 | `postProcess` / `extractAndSave` 与 `dispose()` 竞态：二者均不等待，`dispose()` 立刻关库，在途的记忆抽取写入必然失败且被 `void` + `.catch(()=>{})` 吞掉。测试中记忆抽取大概率从未落库（F1 实证，相隔 1ms）；生产中「发完消息立刻退出」同样丢数据 | `v0.3.0/F1-BASELINE.md` |
+| P1 | `<think>` 剥离必须早于 OOC 检测：思维链含 `as an assistant` 等措辞会命中 OOC 模式，触发最多 2 次重试，同一条消息付三遍钱 | `v0.3.0/F1-BASELINE.md` |
 | P3 | SessionStore 全量重写改为增量持久化（长会话性能） | §5 |
