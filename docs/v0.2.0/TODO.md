@@ -13,7 +13,7 @@
 
 ## B · 可观测性
 
-- [ ] **B1** `initLogging()` 接线
+- [ ] **B1** `initLogging()` 接线 —— **实现需求书：[`SPEC-B1-LOGGING.md`](./SPEC-B1-LOGGING.md)**
   - 现状：`electron/logger.ts` 导出了 `initLogging` / `shutdownLogging`，**全仓无调用者**；三路 JSONL（ops / api / conv）一字节未落盘，打包态 console 也被抑制 ⇒ 零可观测性
   - 改法：`app.whenReady` 首行 `initLogging(app.getPath('userData'))`，退出时 `shutdownLogging()`
   - 目标 `electron/main.ts` · 代理 `electron-dev`

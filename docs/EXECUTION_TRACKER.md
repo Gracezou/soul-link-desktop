@@ -56,7 +56,7 @@ Exit criteria need **no LLM gateway**. This is the only release that can proceed
 
 | ID | Priority | Task | Owner | Depends On | Parallel | Status | Updated | Evidence |
 |---|---|---|---|---|---|---|---|---|
-| B1 | P0 | Wire `initLogging()` at startup and `shutdownLogging()` at exit | electron-dev | None | Yes | `TODO` | 2026-09-12 | **Now blocks model selection**: F1 showed every conclusion had to be reverse-engineered from console output because no JSONL is written. `oocRetryCount` / `emotionTag` / token stats needed for the M2.7-vs-M2-her comparison all live in `conv-*.jsonl` |
+| B1 | P0 | Wire `initLogging()` at startup and `shutdownLogging()` at exit | electron-dev | None | Yes | `TODO` (spec ready: `v0.2.0/SPEC-B1-LOGGING.md`) | 2026-09-12 | **Now blocks model selection**: F1 showed every conclusion had to be reverse-engineered from console output because no JSONL is written. `oocRetryCount` / `emotionTag` / token stats needed for the M2.7-vs-M2-her comparison all live in `conv-*.jsonl` |
 | D1 | P0 | Produce and validate eight initial sprite frames | asset agent | None | Yes | `TODO` | 2026-09-11 | Not started — does not require Codex CLI |
 | G1 | P0 | Replace the hard onboarding gate with a "configure later" path | architect, electron-dev, frontend-dev | None | No | `TODO` | 2026-09-11 | Not started — blocks exit criterion 2 |
 | C2 | P0 | Allow `res:` in packaged CSP; narrow renderer network sources | electron-dev | B1, D1 | Yes | `TODO` | 2026-09-11 | Not started — needs D1 output for real verification |
