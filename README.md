@@ -121,6 +121,7 @@ DyberPet 格式精灵可用 `python tools/sprite_converter.py <act_conf.json> <�
 |---|---|
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | **架构唯一事实来源** — 模块地图、IPC 契约、数据流、持久化、安全与跨平台评估、已知偏差 |
 | [`docs/HANDOFF-2026-09-15.md`](docs/HANDOFF-2026-09-15.md) | **接手先读这份** —— 现状、关键决策的理由、已踩过的坑、未决问题 |
+| [`docs/NEXT-AGENT-PROMPT.md`](docs/NEXT-AGENT-PROMPT.md) | 交给下一个 agent 的启动提示词（含阅读顺序与当前任务） |
 | [`docs/EXECUTION_TRACKER.md`](docs/EXECUTION_TRACKER.md) | **任务状态唯一来源**，三个版本统一台账；含 Evidence 规范与当前阻塞 |
 | [`docs/v0.2.0/`](docs/v0.2.0/) | 看得见的桌宠 —— RELEASE_PLAN / TODO / PREFLIGHT（准入证据）|
 | [`docs/v0.3.0/`](docs/v0.3.0/) | 好好说话 —— RELEASE_PLAN / TODO / 气泡重设计方案 |
