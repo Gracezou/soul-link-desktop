@@ -128,3 +128,50 @@ token 统计都在 conv 日志里**，B1 不做就没法量化比较 M2.7 与 M2
 2. **B1 日志接线** —— 15 秒长尾、OOC 重试、token 统计、模型 A/B，全都要它
 3. 补一条真正跑满 31+ 轮的压缩用例（env 开关，默认不跑）
 4. 修 `dispose()` 竞态
+
+---
+
+## 补充实测（2026-09-15，B1 接线后第一条 conv 日志）
+
+B1 落盘后拿到的第一条真实记录立刻暴露了一个此前只当成「显示问题」的东西的真实严重性。
+
+### 思维链被**写进了数据库**，并作为上下文回灌
+
+日志里 `turn.assistantMessage` 的内容是：
+
+```
+<think>
+用户连续发了几次"早上好"…… 我应该用柏源的角色来回应，保持温柔和开心的语气。
+</think>
+
+*柏源正在做早餐……* "早。" …… [emotion:happy]
+```
+
+`agent/index.ts:141` 存库的是 `finalText`（未经任何过滤的原始全文），
+`context-manager.ts:118` 又把库里的 `item.content` 原样塞回下一轮上下文。于是：
+
+| 影响 | 说明 |
+|---|---|
+| **持久化污染** | `messages` 表里每条 assistant 记录都夹着思维链，历史记录窗口也会显示 |
+| **上下文回灌** | 每一轮都把过去所有轮次的思维链重新发给模型——模型读到自己的草稿纸当成对话 |
+| **成本** | 用项目自己的 `token-counter` 估算本条：思维链 143 CJK 字 ≈ 286 token，可见正文 138 字 ≈ 276 token，**思维链占 51%** |
+| **预算** | 本条 `tokenEstimate` 已达 **4445 / 8000（56%）**，而 `historyLength` 只有 10。压缩阈值是 30 条，**token 预算会远早于压缩阈值触顶** |
+
+**结论：`<think>` 的处理位置错了。** 之前记的是「E1 气泡重做时加过滤」——那只治显示。
+真正的修法在 **Agent 层、`saveMessage` 之前**，让脏数据根本不进库。
+
+优先级顺序：
+
+1. **请求侧**：探针第 4 步若确认 `reasoning_split: true` 有效，加进 `llm-client.ts` 请求体 —— 从源头不返回，最干净
+2. **入库前**：`agent/index.ts` 在 `saveMessage` 前剥离 `<think>…</think>`，作为兜底（模型可能忽略参数）
+3. **显示侧**：E1 只需处理流式过程中的半截标签
+
+⚠️ 在 1/2 落地之前产生的会话数据都已被污染，切模型或修复后建议清一次 `soul-link.db`。
+
+### 其余字段（B1 验收用）
+
+`oocDetected:false` / `oocPattern:null` / `oocRetryCount:0` / `emotionTag:"happy"` /
+`historyLength:10` / `tokenEstimate:4445` / `hasSummary:false` / `memoryCount:0` /
+`latencyMs:7079` / `deltaCount:13` —— 全部有真实值，B1 验收通过。
+
+`memoryCount:0` 与 §「记忆抽取有输入门槛」一致：`早上好 👋` 不含「我」，不触发抽取。

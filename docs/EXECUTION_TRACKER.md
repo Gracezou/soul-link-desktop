@@ -24,7 +24,7 @@ Releases are cut by *what a user can install and see*, not by work type. Each re
 
 | Release | Theme | Needs CPA | Done | Total | Status |
 |---|---|---|---:|---:|---|
-| 0.2.0 | Visible desk pet | **No** | 1 | 9 | `IN_PROGRESS` — B1 in review |
+| 0.2.0 | Visible desk pet | **No** | 2 | 9 | `IN_PROGRESS` |
 | 0.3.0 | Conversations that work | Yes | 0 | 13 | `TODO` — unblocked |
 | 0.4.0 | Proactive companion | Yes | 0 | 13 | `TODO` |
 
@@ -56,7 +56,7 @@ Exit criteria need **no LLM gateway**. This is the only release that can proceed
 
 | ID | Priority | Task | Owner | Depends On | Parallel | Status | Updated | Evidence |
 |---|---|---|---|---|---|---|---|---|
-| B1 | P0 | Wire `initLogging()` at startup and `shutdownLogging()` at exit | electron-dev | None | Yes | `REVIEW` | 2026-09-15 | `4095cbc` · `npx tsc` ×3 + `npx jest tests/unit/` → 8 suites / 74 tests passed + `npm run build:main` → all green · 2026-09-15. Spec `v0.2.0/SPEC-B1-LOGGING.md`. **Not `DONE`**: manual dev/packaged acceptance (spec §4.1/§4.2) and `build:renderer` still outstanding — see notes |
+| B1 | P0 | Wire `initLogging()` at startup and `shutdownLogging()` at exit | electron-dev | None | Yes | `DONE` | 2026-09-15 | `4095cbc` + `fa1c193` · `npx tsc` ×3 + `npx jest tests/unit/` → 8 suites / 74 tests + `npm run build:main` all green · dev-mode acceptance passed: `data/logs/conv-*.jsonl` written with real values (`oocRetryCount:0`, `emotionTag:"happy"`, `tokenEstimate:4445`, `latencyMs:7079`, `deltaCount:13`) · 2026-09-15 |
 | D1 | P0 | Produce and validate eight initial sprite frames | asset agent | None | Yes | `TODO` | 2026-09-11 | Not started — does not require Codex CLI |
 | G1 | P0 | Replace the hard onboarding gate with a "configure later" path | architect, electron-dev, frontend-dev | None | No | `TODO` | 2026-09-11 | Not started — blocks exit criterion 2 |
 | C2 | P0 | Allow `res:` in packaged CSP; narrow renderer network sources | electron-dev | B1, D1 | Yes | `TODO` | 2026-09-11 | Not started — needs D1 output for real verification |
@@ -132,3 +132,4 @@ Exit criteria need **no LLM gateway**. This is the only release that can proceed
 | 2026-09-13 | B1 moved to fresh electron-dev task `01a0994c-558c-7870-82cf-4aa570019ea3` after the prior task produced no output; this is the active implementation task. |
 | 2026-09-15 | B1 implemented and committed as `4095cbc` (main.ts lifecycle wiring + a logger.ts fail-safe fix authorised by the spec's own acceptance item, + `tests/unit/logger.test.ts` which also converts the retention-window manual steps into assertions). Status `REVIEW`, not `DONE`: dev/packaged manual acceptance still pending, and `build:renderer` cannot run in the Linux VM because `node_modules` was installed on macOS (no Linux rollup native binary) — an environment limit, not a code issue. |
 | 2026-09-15 | 实测到用户可见的假阳性：设置页「测试连接」显示成功、同一会话对话却 `HTTP 401: Invalid API key`。根因是测试走表单值的裸 fetch，而 Agent 用启动时的 settings 快照且 `settings:set` 不重建 Agent。「settings:set 后热更新 Agent」由 P2 提升为 P1，并新增短期文案缓解项，见 `ARCHITECTURE.md` §9-B。|
+| 2026-09-15 | B1 `DONE` — dev-mode acceptance passed, conv/api JSONL now written with real values. The very first real log line paid for the task: it showed `<think>` blocks are stored into `messages.content` and fed back as context, not merely displayed. See `v0.3.0/F1-BASELINE.md`. |
