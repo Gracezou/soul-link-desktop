@@ -12,7 +12,10 @@
 - [ ] 统一 `agent:final` 的两套解析器 —— `protocolFilter`（气泡）与 `responseParser`（`useAgent`）对同一条消息各解析一次。v0.2.0 的气泡重做只消除了 FV 重复计数，解析器本身仍是两套
 - [ ] `settings:set` 后热更新 Agent / Companion / 角色，消除「改配置必须重启」
 - [ ] 清理无调用者的死代码：`src/stores/settingsStore.ts`（仍含硬编码网关 IP）、`LlmClient.testConnection()`（`main.ts` 用裸 fetch 重实现了一遍且逻辑已分叉）、`utils/paths.ts` 的 `getDataPath`/`getCardPath`/`getSpritePath`、`store/settings.ts` 的 `getCpaConfig`/`updateCpaConfig`、`agent:reset`、`companion:status`
-- [ ] i18n 与注释中的 OpenClaw 残留：`src/i18n/zh-CN.json`/`en.json` 三处**用户可见文案**、`emotionMapper.ts`、`ExpressionRenderer.ts`、`App.tsx` 注释
+- [ ] i18n 与注释中的 OpenClaw 残留：`src/i18n/zh-CN.json`/`en.json` 各三处**用户可见文案**
+      （第 18 行 onboarding 标题、**第 89 行设置页「OpenClaw 网关」标题**、第 131 行关于页技术栈），
+      以及 `emotionMapper.ts`、`ExpressionRenderer.ts`、`App.tsx` 注释
+      ⚠️ 第 89 行是用户排查连接问题时正对着的标题，而网关早已换成 CPA/CLIProxyAPI，属主动误导，建议提前处理
 - [ ] `PetApp`/`PetCanvas` 硬编码 `baiyuan`，未读 `pet.character` 设置（多角色的前置）
 - [ ] legacy 测试归位：`tests/` 根目录 6 个文件 57 用例不在 `npm test`（= `jest tests/unit/`）范围内，被静默跳过
 - [ ] 引入 ESLint 工具链 —— 仓库现无配置、无依赖，因此各 agent 定义里的 `npx eslint .` 已被移除

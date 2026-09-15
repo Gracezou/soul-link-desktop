@@ -283,7 +283,9 @@ src/                 渲染进程（ESM，vite → dist/），单 HTML 按 ?page
 | P2 | 12 个裸字符串通道补入 `ipc.ts`，删除 3 个死通道 | R6 |
 | P2 | 引入 preload channel allowlist + 类型化 API | R5 |
 | P2 | 统一 `agent:final` 解析路径，二选一保留 | §9-A4 |
-| P2 | `settings:set` 后热更新 Agent / Companion / 角色（消除强制重启） | §5 |
+| **P1** | `settings:set` 后热更新 Agent（消除强制重启）—— **已造成用户可见的假阳性**：设置页「测试连接」走 `main.ts:189` 的裸 fetch、用**表单里的值**，而 Agent 用 `launchMainApp()` 时的 settings 快照（`main.ts:444`），`settings:set`（`main.ts:134`）只写库+广播不重建 Agent。结果是面板显示「连接成功 ✓」而对话 `HTTP 401: Invalid API key`（2026-09-15 实测） | §5 · §9-A5/A6 |
+| P1 | 短期缓解：测试成功时若表单值 ≠ 已保存值，文案应为「连接成功（尚未保存）」，不要让绿勾暗示当前会话可用 | 同上 |
+| P2 | `agent:test-connection` 复用 `LlmClient.testConnection()`，消除两套已分叉的逻辑 | §9-A6 |
 | P2 | i18n OpenClaw 文案替换；删除 `settingsStore.ts` 死代码 | §9-A11/12 |
 | P2 | legacy 测试迁入 `tests/unit/` 或扩大 `npm test` 范围；引入 ESLint 工具链 | R8 |
 | P1 | `postProcess` / `extractAndSave` 与 `dispose()` 竞态：二者均不等待，`dispose()` 立刻关库，在途的记忆抽取写入必然失败且被 `void` + `.catch(()=>{})` 吞掉。测试中记忆抽取大概率从未落库（F1 实证，相隔 1ms）；生产中「发完消息立刻退出」同样丢数据 | `v0.3.0/F1-BASELINE.md` |
