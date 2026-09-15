@@ -22,7 +22,7 @@ if (!gotTheLock) {
 import path from 'path'
 import fs from 'fs'
 import { IPC } from './ipc'
-import { createLogger } from './logger'
+import { createLogger, initLogging, shutdownLogging } from './logger'
 
 const mainLogger = createLogger('Main')
 import { SoulLinkAgent } from './agent'
@@ -32,7 +32,7 @@ import { createSettingsWindow } from './windows/settingsWindow'
 import { createOnboardingWindow } from './windows/onboardingWindow'
 import { getSettings, updateSettings } from './store/settings'
 import { CompanionScheduler } from './companion/scheduler'
-import { getResourcePath, getDBPath } from './utils/paths'
+import { getResourcePath, getDataPath, getDBPath } from './utils/paths'
 import { needsOnboarding } from './utils/onboardingGuard'
 
 // Set once at startup; all resource consumers read this instead of branching on isDev
@@ -470,6 +470,12 @@ function launchMainApp(): void {
 }
 
 app.whenReady().then(async () => {
+  try {
+    initLogging(getDataPath())
+  } catch (err) {
+    console.error('[Main] initLogging failed, continuing without file logs:', err)
+  }
+
   if (app.isPackaged) {
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
       const filtered = Object.fromEntries(
@@ -525,4 +531,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+app.on('will-quit', () => {
+  shutdownLogging()
 })

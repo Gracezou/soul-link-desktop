@@ -155,9 +155,10 @@ function extractData(args: unknown[]): Record<string, unknown> | undefined {
 // ---------------------------------------------------------------------------
 
 export function initLogging(userDataPath: string): void {
-  logsDir = path.join(userDataPath, 'logs')
-  fs.mkdirSync(logsDir, { recursive: true })
-  cleanupOldLogs(logsDir)
+  const candidateLogsDir = path.join(userDataPath, 'logs')
+  fs.mkdirSync(candidateLogsDir, { recursive: true })
+  cleanupOldLogs(candidateLogsDir)
+  logsDir = candidateLogsDir
 }
 
 export function shutdownLogging(): void {
