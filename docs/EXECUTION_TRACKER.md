@@ -25,7 +25,7 @@ Releases are cut by *what a user can install and see*, not by work type. Each re
 | Release | Theme | Needs CPA | Done | Total | Status |
 |---|---|---|---:|---:|---|
 | 0.2.0 | Visible desk pet | **No** | 2 | 9 | `IN_PROGRESS` |
-| 0.3.0 | Conversations that work | Yes | 0 | 13 | `TODO` — unblocked |
+| 0.3.0 | Conversations that work | Yes | 0 | 14 | `TODO` — unblocked |
 | 0.4.0 | Proactive companion | Yes | 0 | 13 | `TODO` |
 
 Group A (documentation and agent metadata) is complete and is **not** a release — it was a preflight gate for the train.
@@ -70,6 +70,7 @@ Exit criteria need **no LLM gateway**. This is the only release that can proceed
 
 | ID | Priority | Task | Owner | Depends On | Parallel | Status | Updated | Evidence |
 |---|---|---|---|---|---|---|---|---|
+| C0 | **P0** | Keep thinking out of content, DB and context (`reasoning_split` + defensive strip) | electron-dev | None | No | `TODO` | 2026-09-15 | Spec `v0.3.0/SPEC-C0-THINKING.md`. Probe step 4 confirmed `reasoning_split: true` returns clean content. **Version assignment needs Grace's call** — data-integrity issue, arguably belongs in 0.2.0 |
 | C1 | P0 | Broadcast Agent lifecycle events to pet and chat windows | electron-dev | 0.2.0 shipped | Yes | `TODO` | 2026-09-12 | Unblocked |
 | E1 | P0 | Rebuild chat bubble state, clock, filtering, errors, dismissal, layout, tests | frontend-dev | 0.2.0 shipped | Yes | `TODO` | 2026-09-12 | Unblocked |
 | F1 | P0 | Run live Agent integration tests | test-build | CPA restored | No | `TODO` | 2026-09-11 | Gateway restored; can run now against current source for a baseline |
@@ -133,3 +134,4 @@ Exit criteria need **no LLM gateway**. This is the only release that can proceed
 | 2026-09-15 | B1 implemented and committed as `4095cbc` (main.ts lifecycle wiring + a logger.ts fail-safe fix authorised by the spec's own acceptance item, + `tests/unit/logger.test.ts` which also converts the retention-window manual steps into assertions). Status `REVIEW`, not `DONE`: dev/packaged manual acceptance still pending, and `build:renderer` cannot run in the Linux VM because `node_modules` was installed on macOS (no Linux rollup native binary) — an environment limit, not a code issue. |
 | 2026-09-15 | 实测到用户可见的假阳性：设置页「测试连接」显示成功、同一会话对话却 `HTTP 401: Invalid API key`。根因是测试走表单值的裸 fetch，而 Agent 用启动时的 settings 快照且 `settings:set` 不重建 Agent。「settings:set 后热更新 Agent」由 P2 提升为 P1，并新增短期文案缓解项，见 `ARCHITECTURE.md` §9-B。|
 | 2026-09-15 | B1 `DONE` — dev-mode acceptance passed, conv/api JSONL now written with real values. The very first real log line paid for the task: it showed `<think>` blocks are stored into `messages.content` and fed back as context, not merely displayed. See `v0.3.0/F1-BASELINE.md`. |
+| 2026-09-15 | Probe step 4: `reasoning_split: true` returns clean `content` with thinking moved to `reasoning_content` — the fix exists at the source. Added C0 spec. Gateway now also serves `glm-5.3`, `glm-5.3-flash`, `glm-5.2`, so the fallback path for that non-standard parameter is a requirement, not a nicety. |
