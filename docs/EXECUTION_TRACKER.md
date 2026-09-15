@@ -1,6 +1,6 @@
 # Execution Tracker — 0.2.0 / 0.3.0 / 0.4.0
 
-> Last updated: 2026-09-11
+> Last updated: 2026-09-13
 > **Single source of truth for task status.** Product status source for `pm-planner` and implementation agents.
 > Requirements and acceptance criteria live in each release's `TODO.md`; when the two disagree, this file wins.
 > Release scope: [`v0.2.0`](./v0.2.0/RELEASE_PLAN.md) · [`v0.3.0`](./v0.3.0/RELEASE_PLAN.md) · [`v0.4.0`](./v0.4.0/RELEASE_PLAN.md)
@@ -24,7 +24,7 @@ Releases are cut by *what a user can install and see*, not by work type. Each re
 
 | Release | Theme | Needs CPA | Done | Total | Status |
 |---|---|---|---:|---:|---|
-| 0.2.0 | Visible desk pet | **No** | 1 | 9 | `TODO` — unblocked |
+| 0.2.0 | Visible desk pet | **No** | 1 | 9 | `IN_PROGRESS` — B1 in review |
 | 0.3.0 | Conversations that work | Yes | 0 | 13 | `TODO` — unblocked |
 | 0.4.0 | Proactive companion | Yes | 0 | 13 | `TODO` |
 
@@ -56,7 +56,7 @@ Exit criteria need **no LLM gateway**. This is the only release that can proceed
 
 | ID | Priority | Task | Owner | Depends On | Parallel | Status | Updated | Evidence |
 |---|---|---|---|---|---|---|---|---|
-| B1 | P0 | Wire `initLogging()` at startup and `shutdownLogging()` at exit | electron-dev | None | Yes | `TODO` (spec ready: `v0.2.0/SPEC-B1-LOGGING.md`) | 2026-09-12 | **Now blocks model selection**: F1 showed every conclusion had to be reverse-engineered from console output because no JSONL is written. `oocRetryCount` / `emotionTag` / token stats needed for the M2.7-vs-M2-her comparison all live in `conv-*.jsonl` |
+| B1 | P0 | Wire `initLogging()` at startup and `shutdownLogging()` at exit | electron-dev | None | Yes | `REVIEW` | 2026-09-15 | `4095cbc` · `npx tsc` ×3 + `npx jest tests/unit/` → 8 suites / 74 tests passed + `npm run build:main` → all green · 2026-09-15. Spec `v0.2.0/SPEC-B1-LOGGING.md`. **Not `DONE`**: manual dev/packaged acceptance (spec §4.1/§4.2) and `build:renderer` still outstanding — see notes |
 | D1 | P0 | Produce and validate eight initial sprite frames | asset agent | None | Yes | `TODO` | 2026-09-11 | Not started — does not require Codex CLI |
 | G1 | P0 | Replace the hard onboarding gate with a "configure later" path | architect, electron-dev, frontend-dev | None | No | `TODO` | 2026-09-11 | Not started — blocks exit criterion 2 |
 | C2 | P0 | Allow `res:` in packaged CSP; narrow renderer network sources | electron-dev | B1, D1 | Yes | `TODO` | 2026-09-11 | Not started — needs D1 output for real verification |
@@ -127,3 +127,7 @@ Exit criteria need **no LLM gateway**. This is the only release that can proceed
 | 2026-09-12 | Added V0 (gateway model selection) with `v0.3.0/MODEL_SELECTION.md`. Integration harness hardened: `tests/integration/helpers.ts` no longer carries a stale default base URL, and `tools/cpa_probe.mjs` checks reachability, auth, model availability and SSE streaming before the suite runs. |
 | 2026-09-12 | V0 done: `MiniMax-M2.7-highspeed` configured via CPA. F1 partially run — `agent-pipeline` PASS, first end-to-end success since April. Two findings recorded in `v0.3.0/F1-BASELINE.md`: thinking did not trigger OOC retry (by luck, not design — the pattern `as an assistant` can still match reasoning text), and memory extraction races `dispose()` so it likely never lands in tests. |
 | 2026-09-12 | F1 DONE — 3 suites / 9 tests pass in 50.6s. Three further findings: `compression.test.ts` never reaches the 30-message threshold so F5 has zero real coverage; memory extraction is gated on the user saying "我"/"my" (1 of 4 messages fired); one turn took 15.28s against a 3-5s norm with no way to attribute it because API logs are not written. |
+| 2026-09-13 | B1 implementation checklist added at `v0.2.0/TASKS-B1-LOGGING.md`; TODO path and lifecycle summary aligned with the approved spec. Status remains TODO. |
+| 2026-09-13 | B1 Phase 3 resumed in electron-dev task `01a08c3b-1b84-7291-93ed-38a2e7d5ef05` under the updated direct-edit workflow; status set to IN_PROGRESS. |
+| 2026-09-13 | B1 moved to fresh electron-dev task `01a0994c-558c-7870-82cf-4aa570019ea3` after the prior task produced no output; this is the active implementation task. |
+| 2026-09-15 | B1 implemented and committed as `4095cbc` (main.ts lifecycle wiring + a logger.ts fail-safe fix authorised by the spec's own acceptance item, + `tests/unit/logger.test.ts` which also converts the retention-window manual steps into assertions). Status `REVIEW`, not `DONE`: dev/packaged manual acceptance still pending, and `build:renderer` cannot run in the Linux VM because `node_modules` was installed on macOS (no Linux rollup native binary) — an environment limit, not a code issue. |

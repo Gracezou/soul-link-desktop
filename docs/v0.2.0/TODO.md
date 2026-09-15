@@ -13,11 +13,11 @@
 
 ## B · 可观测性
 
-- [ ] **B1** `initLogging()` 接线 —— **实现需求书：[`SPEC-B1-LOGGING.md`](./SPEC-B1-LOGGING.md)**
+- [x] **B1** `initLogging()` 接线 —— `4095cbc`（待手工验收，状态见 tracker） —— **实现需求书：[`SPEC-B1-LOGGING.md`](./SPEC-B1-LOGGING.md)** · **任务清单：[`TASKS-B1-LOGGING.md`](./TASKS-B1-LOGGING.md)**
   - 现状：`electron/logger.ts` 导出了 `initLogging` / `shutdownLogging`，**全仓无调用者**；三路 JSONL（ops / api / conv）一字节未落盘，打包态 console 也被抑制 ⇒ 零可观测性
-  - 改法：`app.whenReady` 首行 `initLogging(app.getPath('userData'))`，退出时 `shutdownLogging()`
+  - 改法：`app.whenReady` 首行容错调用 `initLogging(getDataPath())`，在 `will-quit` 调用 `shutdownLogging()`
   - 目标 `electron/main.ts` · 代理 `electron-dev`
-  - 验收：开发与打包两种模式下 `<userData>/logs/` 出现 `ops-*.jsonl`、`api-*.jsonl`
+  - 验收：开发态 `<repo>/data/logs/`、打包态 `<userData>/logs/` 出现 ops / api / conv 三类 JSONL
   - **最先做**：C2 / G1 / D1 的排查全靠它，现在出问题只能靠 console 猜
 
 ## C · 功能接线（本版本只含 C2）

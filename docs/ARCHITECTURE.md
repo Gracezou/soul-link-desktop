@@ -204,7 +204,7 @@ src/                 渲染进程（ESM，vite → dist/），单 HTML 按 ?page
 |---|---|---|---|
 | 设置 | electron-store `settings.json` | **始终** `app.getPath('userData')`（开发态即 Electron 默认 userData，**不是 `data/`**） | 含 `0.2.0` migration：`openclaw.authToken → cpa.apiKey`、`openclaw.defaultCard → character.cardName`、删除 `openclaw` 键。**这是全仓唯一合法出现 `openclaw` 的位置，删除它会导致老用户配置丢失** |
 | 会话与记忆 | sql.js(WASM) SQLite 单文件 | `getDBPath()`：开发 `data/soul-link.db`；打包 `userData/soul-link.db` | 表 `sessions(id,character_name,created_at,updated_at,summary)`、`messages(id,session_id,role,content,created_at,metadata)`、`memories(id,character_id,category,key,value,confidence,created_at,updated_at, UNIQUE(character_id,category,key))`。`summary` 列通过 `ALTER TABLE … catch` 做幂等迁移 |
-| 日志 | JSONL（ops/api/conv） | `initLogging(userDataPath)` 传入的目录下的 `logs/` | **`initLogging()` 全仓无调用者 → 文件日志实际从未落盘**，见 §9 |
+| 日志 | JSONL（ops/api/conv） | `getDataPath()/logs`：开发 `<repo>/data/logs`；打包 `<userData>/logs` | 由 `main.ts` 在 `whenReady` 首条语句调用 `initLogging()` 接通（`4095cbc`），`will-quit` 调 `shutdownLogging()`。按日轮转，ops/api 保留 7 天、conv 保留 30 天 |
 | 静态资源 | `res/`（cards / sprites / icons） | 开发 `<repo>/res`；打包 `process.resourcesPath/res`（`extraResources`） | 由 `SOUL_LINK_RES_BASE` 环境变量与 `res://` 自定义协议统一寻址 |
 
 `SessionStore` 与 `MemoryStore` 的每次写入都执行 `db.export()` + `fs.writeFileSync(整库)`，即**每条消息全量重写数据库文件**。当前数据量下可接受，长会话下是已知性能上限（§9）。
@@ -261,7 +261,7 @@ src/                 渲染进程（ESM，vite → dist/），单 HTML 按 ?page
 4. `agent:final` 被两套解析器各解析一次（`protocolFilter` / `responseParser`），FV 与动画可能被重复触发。
 5. `settings:set` 不重建 Agent、不调 `companion.updateConfig()`、不调 `agent.switchCharacter()`——`switchCharacter()` 全仓无调用者；改配置需重启。
 6. `LlmClient.testConnection()` 无调用者；`main.ts` 的 `agent:test-connection` handler 用裸 `fetch` 重新实现了一遍（10s 超时 vs 30s，无重试），两处逻辑已分叉。
-7. `utils/paths.ts` 的 `getDataPath` / `getCardPath` / `getSpritePath` 与 `store/settings.ts` 的 `getCpaConfig` / `updateCpaConfig` 均无调用者。
+7. `utils/paths.ts` 的 `getCardPath` / `getSpritePath` 与 `store/settings.ts` 的 `getCpaConfig` / `updateCpaConfig` 均无调用者（`getDataPath` 已于 `4095cbc` 被日志接线启用）。
 8. `CompanionScheduler` 是固定间隔 `setInterval`，不是 idle 检测；`companion/triggers.ts` 的 `shouldTrigger()` 无调用者。
 9. 返回值风格不统一：仅 `agent:test-connection` 用 `{ success, error? }`，`settings:get` / `agent:get-status` / `cards:list` / `agent:get-history` 直接返回值。**定为目标态，存量不回改**。
 10. `res/sprites/baiyuan/frames/` 为空目录（全仓 sprites 下只有 1 个文件 `manifest.json`），manifest 声明 11 组动画约 26 帧 → 桌宠恒定走占位渲染。
@@ -278,7 +278,6 @@ src/                 渲染进程（ESM，vite → dist/），单 HTML 按 ?page
 |---|---|---|
 | P1 | `agent:*` 广播到 pet + chat 两窗口，修复 chat window 永久 loading | R4 |
 | P1 | 打包态 CSP `connect-src` 补 `res:`，并在真实安装包上验证桌宠清单加载 | §7 |
-| P1 | `initLogging()` 从未被调用 → 文件日志全部未落盘；打包态 `log`/`info` 连 console 都被抑制，等于零可观测性。应在 `app.whenReady` 首行调用 `initLogging(app.getPath('userData'))`，并在退出时 `shutdownLogging()` | §5 |
 | P1 | 补齐 sprite 帧资源 | §9-A10 |
 | P2 | companion nudge 接入 Agent（`main.ts:466` 的 TODO）并在渲染端加监听者 | §4 |
 | P2 | 12 个裸字符串通道补入 `ipc.ts`，删除 3 个死通道 | R6 |

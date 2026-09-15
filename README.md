@@ -88,7 +88,8 @@ npm run build:win    # 仅 Windows NSIS（建议在 Windows 主机）
 
 `<userData>` 在 macOS 为 `~/Library/Application Support/Soul Link Desktop/`，Windows 为 `%APPDATA%/Soul Link Desktop/`。
 
-> 注：日志模块（`electron/logger.ts`，ops / conv / api 三路 JSONL）已实现但**尚未接线**，当前不会落盘。见 `docs/v0.2.0/TODO.md` B1。
+日志（`electron/logger.ts`，ops / conv / api 三路 JSONL）落在 `<开发: repo/data | 打包: userData>/logs/`，
+按日轮转，ops/api 保留 7 天、conv 保留 30 天。
 
 ## 添加角色
 
