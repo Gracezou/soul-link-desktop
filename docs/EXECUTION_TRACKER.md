@@ -24,7 +24,7 @@ Releases are cut by *what a user can install and see*, not by work type. Each re
 
 | Release | Theme | Needs CPA | Done | Total | Status |
 |---|---|---|---:|---:|---|
-| 0.2.0 | Visible desk pet | **No** (C0 excepted) | 2 | 10 | `IN_PROGRESS` |
+| 0.2.0 | Visible desk pet | **No** (C0 excepted) | 3 | 10 | `IN_PROGRESS` |
 | 0.3.0 | Conversations that work | Yes | 1 | 10 | `TODO` — unblocked |
 | 0.4.0 | Proactive companion | Yes | 0 | 5 | `TODO` |
 
