@@ -4,7 +4,15 @@
 > 上游证据：[`F1-BASELINE.md`](./F1-BASELINE.md) 补充实测 · [`../ARCHITECTURE.md`](../ARCHITECTURE.md) §9-B（P0）
 > 目标文件：`electron/agent/llm-client.ts`、`electron/agent/index.ts`（+ 单测）
 
-## 0. 归属版本 —— 需要 Grace 拍板
+## 0. 归属版本 —— 已定：0.2.0（Grace，2026-09-16）
+
+C0 纳入 **0.2.0**，理由即下文：防止发布版损坏用户数据。任务跟踪见
+[`EXECUTION_TRACKER.md`](../EXECUTION_TRACKER.md) 的 0.2.0 表。本文件路径保持在 `v0.3.0/` 不动，
+避免改链接；以跟踪表为准。
+
+> 以下为拍板前的原始论证，保留备查。
+
+### 0.1 原始论证
 
 按主题它属于 **0.3.0「好好说话」**。但它不是体验问题，是**数据完整性**问题：
 修复前的每一轮对话都会把思维链写进 `messages` 表，并在之后每一轮回灌给模型。
@@ -52,9 +60,20 @@ PASS  content 已干净  1904ms  "收到"
 reasoning_split: true,
 ```
 
-⚠️ **必须做降级处理**：网关现在同时服务 `glm-5.3` / `glm-5.3-flash` / `glm-5.2`，
-而 `reasoning_split` 是 MiniMax 的非标准参数。做 A/B 切到 GLM 时，
-严格的上游可能对未知字段返回 4xx。
+⚠️ **仍要做降级处理，但按 2026-09-16 的实测调整定位**：
+
+八次实测（`MiniMax-M2.7-highspeed` / `MiniMax-M3` / `MiniMax-M2.5-highspeed` / `glm-5.3`，
+带与不带该参数各一次）**全部 HTTP 200，没有任何模型拒绝该字段**。
+三个 MiniMax 模型带上它都返回干净 `content`，思维链进 `reasoning_content`；不带则全部内联 `<think>`。
+
+因此 4xx 降级路径**当前无法在本网关上被触发，属纯防御代码**。仍然要写（换供应商即可能需要），
+但不要为验证它去构造假场景，验收也不再要求实测触发。
+
+Grace 已确认：生产与 A/B 都只用 MiniMax 系列，不切 GLM。
+
+另记一个**不同形态的失败**：`glm-5.3` 带上该参数时返回了**空 `content`** 而 `reasoning_content` 有 631 字符
+（当时 `max_tokens: 200`，很可能只是预算截断，未确认）。它不是 4xx，4xx 降级挡不住它。
+若将来真要接 GLM，降级判据需要加上「`content` 为空但 `reasoning_content` 非空」。
 
 **要求**：`request()` 收到 4xx 且响应体提到该参数名（或任何 `invalid/unknown parameter` 类措辞）时，
 **去掉该字段重试一次**，并记一条 `warn` 日志（`reasoning_split unsupported, retried without`）。
@@ -121,8 +140,11 @@ finalText = stripThinking(result.fullText).trim()
 3. `soul-link.db` 的 `messages` 表中 assistant 记录不含 `<think>`
    （可用 `sqlite3` 或加一条临时脚本核验）
 4. 同等对话轮次下 `context.tokenEstimate` 显著下降（对照基线：10 条消息 4445）
-5. 把 `CPA_MODEL` 切到 `glm-5.3` 跑 `node tools/cpa_probe.mjs` 与一轮对话，
-   确认 §3.1 的降级逻辑生效、对话正常、日志里有且只有一条降级 warn
+5. 把 `CPA_MODEL` 依次切到 `MiniMax-M3` 与 `MiniMax-M2.5-highspeed` 各跑一轮对话，
+   确认正文干净、无降级 warn（这两个模型实测支持该参数）。
+   **不再要求用 `glm-5.3` 实测降级** —— 本网关上没有模型会返回 4xx，理由见 §3.1。
+   降级逻辑改为用单测覆盖：构造一个返回 4xx 且响应体含 `unknown parameter` 的假 `fetch`，
+   断言「去掉字段重试一次、只重试一次、记一条 warn、同实例后续请求不再带该字段」
 6. `npx tsc` ×3、`npm test`、`npm run build:main` 全绿
 7. `git status` 只显示预期文件
 

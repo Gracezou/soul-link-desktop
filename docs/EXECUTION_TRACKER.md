@@ -1,6 +1,6 @@
 # Execution Tracker — 0.2.0 / 0.3.0 / 0.4.0
 
-> Last updated: 2026-09-13
+> Last updated: 2026-09-16
 > **Single source of truth for task status.** Product status source for `pm-planner` and implementation agents.
 > Requirements and acceptance criteria live in each release's `TODO.md`; when the two disagree, this file wins.
 > Release scope: [`v0.2.0`](./v0.2.0/RELEASE_PLAN.md) · [`v0.3.0`](./v0.3.0/RELEASE_PLAN.md) · [`v0.4.0`](./v0.4.0/RELEASE_PLAN.md)
@@ -24,18 +24,23 @@ Releases are cut by *what a user can install and see*, not by work type. Each re
 
 | Release | Theme | Needs CPA | Done | Total | Status |
 |---|---|---|---:|---:|---|
-| 0.2.0 | Visible desk pet | **No** | 2 | 9 | `IN_PROGRESS` |
-| 0.3.0 | Conversations that work | Yes | 0 | 14 | `TODO` — unblocked |
-| 0.4.0 | Proactive companion | Yes | 0 | 13 | `TODO` |
+| 0.2.0 | Visible desk pet | **No** (C0 excepted) | 2 | 10 | `IN_PROGRESS` |
+| 0.3.0 | Conversations that work | Yes | 1 | 10 | `TODO` — unblocked |
+| 0.4.0 | Proactive companion | Yes | 0 | 4 | `TODO` |
+
+Counts equal the rows listed below. The earlier 9 / 14 / 13 figures came from a different grouping and no longer matched the tables.
 
 Group A (documentation and agent metadata) is complete and is **not** a release — it was a preflight gate for the train.
 
 ## Current External Blockers
 
-1. ~~Local Codex CLI cannot complete an implementation run.~~ **Resolved 2026-09-12 by removing the dependency.** The mandatory delegated-edit workflow has been dropped: `electron-dev` and `frontend-dev` now edit source directly. The five-phase workflow (pm-planner → architect → implement → code-reviewer → test-build) is unchanged; only the executor changed. **All implementation tasks are unblocked.**
-2. ~~CPA LLM gateway is being rebuilt.~~ **Resolved 2026-09-12** — gateway is back up. Verification tasks that only need a live gateway are unblocked; those that also need unshipped implementation stay blocked on the Codex CLI.
-   - **F1 can run right now** against the current `3081f80` source and produce the first post-outage integration baseline. It needs no implementation work and no Codex CLI.
-   - The gateway is a single self-hosted instance that was down for five months. Treat its availability as a dependency that will fail again — that is the standing argument for G1.
+**None as of 2026-09-16.** Both historical blockers are resolved and the current workstation clears the constraints the previous VM imposed.
+
+1. ~~Local Codex CLI cannot complete an implementation run.~~ Resolved 2026-09-12 by removing the dependency. Implementation agents edit source directly; the five-phase workflow is unchanged.
+2. ~~CPA LLM gateway is being rebuilt.~~ Resolved 2026-09-12; re-verified 2026-09-16 — `GET /models` returns 200 with ten models.
+3. ~~Linux VM cannot run `build:renderer`, reach the gateway, push, or start a GUI.~~ Resolved 2026-09-16 by moving to the macOS workstation: gateway reachable, `git push` verified (`1d61110..c45e171` on `release/0.2.0`), macOS rollup binary present. GUI and packaging remain unverified in this environment.
+
+The gateway is still a single self-hosted instance that was down for five months. Treat its availability as a dependency that will fail again — that is the standing argument for G1.
 
 ## Preflight — Group A (complete)
 
@@ -52,12 +57,13 @@ Group A (documentation and agent metadata) is complete and is **not** a release 
 
 ## Release 0.2.0 — Visible Desk Pet
 
-Exit criteria need **no LLM gateway**. This is the only release that can proceed during the CPA outage.
+Exit criteria need **no LLM gateway**, with one deliberate exception: C0 was pulled into this release on 2026-09-16 (Grace's call) because it is a data-integrity defect — shipping 0.2.0 without it means any user who configures a gateway writes thinking traces into `messages` irreversibly. Its verification does need the gateway; the other nine tasks do not.
 
 | ID | Priority | Task | Owner | Depends On | Parallel | Status | Updated | Evidence |
 |---|---|---|---|---|---|---|---|---|
 | B1 | P0 | Wire `initLogging()` at startup and `shutdownLogging()` at exit | electron-dev | None | Yes | `DONE` | 2026-09-15 | `4095cbc` + `fa1c193` · `npx tsc` ×3 + `npx jest tests/unit/` → 8 suites / 74 tests + `npm run build:main` all green · dev-mode acceptance passed: `data/logs/conv-*.jsonl` written with real values (`oocRetryCount:0`, `emotionTag:"happy"`, `tokenEstimate:4445`, `latencyMs:7079`, `deltaCount:13`) · 2026-09-15 |
-| D1 | P0 | Produce and validate eight initial sprite frames | asset agent | None | Yes | `TODO` | 2026-09-11 | Not started — does not require Codex CLI |
+| C0 | **P0** | Keep thinking out of content, DB and context (`reasoning_split` + defensive strip) | electron-dev | None | No | `TODO` | 2026-09-16 | Spec `v0.3.0/SPEC-C0-THINKING.md`. Moved here from 0.3.0 on Grace's call — data integrity, not experience. Gateway probe 2026-09-16: `reasoning_split: true` yields clean content on all three MiniMax models in use |
+| D1 | P0 | Produce and validate eight initial sprite frames | Grace (image generation) + tools | None | Yes | `TODO` | 2026-09-16 | Not started. No project role can generate images; prompts at `archive/2604/SPRITE_PROMPTS.md`, slicing/checking via `tools/` |
 | G1 | P0 | Replace the hard onboarding gate with a "configure later" path | architect, electron-dev, frontend-dev | None | No | `TODO` | 2026-09-11 | Not started — blocks exit criterion 2 |
 | C2 | P0 | Allow `res:` in packaged CSP; narrow renderer network sources | electron-dev | B1, D1 | Yes | `TODO` | 2026-09-11 | Not started — needs D1 output for real verification |
 | D2 | P1 | Add a visible tray icon | asset agent | None | Yes | `TODO` | 2026-09-11 | Not started |
@@ -70,14 +76,14 @@ Exit criteria need **no LLM gateway**. This is the only release that can proceed
 
 | ID | Priority | Task | Owner | Depends On | Parallel | Status | Updated | Evidence |
 |---|---|---|---|---|---|---|---|---|
-| C0 | **P0** | Keep thinking out of content, DB and context (`reasoning_split` + defensive strip) | electron-dev | None | No | `TODO` | 2026-09-15 | Spec `v0.3.0/SPEC-C0-THINKING.md`. Probe step 4 confirmed `reasoning_split: true` returns clean content. **Version assignment needs Grace's call** — data-integrity issue, arguably belongs in 0.2.0 |
 | C1 | P0 | Broadcast Agent lifecycle events to pet and chat windows | electron-dev | 0.2.0 shipped | Yes | `TODO` | 2026-09-12 | Unblocked |
-| E1 | P0 | Rebuild chat bubble state, clock, filtering, errors, dismissal, layout, tests | frontend-dev | 0.2.0 shipped | Yes | `TODO` | 2026-09-12 | Unblocked |
-| F1 | P0 | Run live Agent integration tests | test-build | CPA restored | No | `TODO` | 2026-09-11 | Gateway restored; can run now against current source for a baseline |
+| E1 | P0 | Rebuild chat bubble state, clock, filtering, errors, dismissal, layout, tests | frontend-dev | 0.2.0 shipped | Yes | `TODO` | 2026-09-16 | Unblocked. **Bubble placement is wrong today (Grace, 2026-09-16)** — anchoring relative to the pet is now an explicit acceptance item of this task, not a separate fix |
+| E2 | P1 | Rework the settings panel UI | architect, frontend-dev | None | Yes | `TODO` | 2026-09-16 | New 2026-09-16 on Grace's report that the panel needs visual and structural work. Scope undefined — needs `pm-planner` before implementation. Kept out of 0.2.0 to protect that release's scope; promote if Grace wants it in the first installer |
+| F1 | P0 | Run live Agent integration tests | test-build | CPA restored | No | `DONE` | 2026-09-12 | 3 suites / 9 tests pass in 50.6s · baseline and five findings recorded in `v0.3.0/F1-BASELINE.md` · source at `3081f80` · 2026-09-12. Row said `TODO` until 2026-09-16 while the Change Log already recorded completion |
 | F2 | P0 | Verify onboarding, first conversation, restart, session persistence | test-build | F1 | No | `TODO` | 2026-09-11 | Depends on F1 only |
 | F3 | P0 | Verify streaming bubble behavior and emotion-tag filtering | test-build | F1, E1 | No | `TODO` | 2026-09-12 | Waits on E1 only |
 | F4 | P1 | Verify OOC detection and at most two retries | test-build | F1 | No | `TODO` | 2026-09-11 | Depends on F1 only |
-| F5 | P1 | Verify compression after more than 30 messages | test-build | F1 | No | `TODO` | 2026-09-11 | Depends on F1 only |
+| F5 | P1 | Verify compression after more than 30 messages | test-build | F1 | No | `TODO` | 2026-09-16 | Zero real coverage today: `compression.test.ts` sends 4 messages against a 30-message threshold. Grace approved 2026-09-16: build it as a separate case behind `CPA_SLOW_TESTS=1`, run before a release, keeping the default suite at ~50s |
 | F6 | P1 | Verify cross-session memory recall | test-build | F1 | No | `TODO` | 2026-09-11 | Depends on F1 only |
 | F7 | P0 | Verify network, credential, and waiting-timeout error paths | test-build | F1, E1 | No | `TODO` | 2026-09-12 | Waits on E1 only |
 
@@ -135,3 +141,5 @@ Exit criteria need **no LLM gateway**. This is the only release that can proceed
 | 2026-09-15 | 实测到用户可见的假阳性：设置页「测试连接」显示成功、同一会话对话却 `HTTP 401: Invalid API key`。根因是测试走表单值的裸 fetch，而 Agent 用启动时的 settings 快照且 `settings:set` 不重建 Agent。「settings:set 后热更新 Agent」由 P2 提升为 P1，并新增短期文案缓解项，见 `ARCHITECTURE.md` §9-B。|
 | 2026-09-15 | B1 `DONE` — dev-mode acceptance passed, conv/api JSONL now written with real values. The very first real log line paid for the task: it showed `<think>` blocks are stored into `messages.content` and fed back as context, not merely displayed. See `v0.3.0/F1-BASELINE.md`. |
 | 2026-09-15 | Probe step 4: `reasoning_split: true` returns clean `content` with thinking moved to `reasoning_content` — the fix exists at the source. Added C0 spec. Gateway now also serves `glm-5.3`, `glm-5.3-flash`, `glm-5.2`, so the fallback path for that non-standard parameter is a requirement, not a nicety. |
+| 2026-09-16 | Grace's calls: C0 moves into **0.2.0** (data integrity); G1 **stays in 0.2.0**; F5 becomes a separate `CPA_SLOW_TESTS=1` case. Blocker list cleared — work moved to the macOS workstation, where the gateway is reachable and `git push` works (`release/0.2.0` pushed to `c45e171`; `master` already in sync, contradicting the handoff's "20 commits unpushed"). F1 row corrected to `DONE`. Release counts recomputed to match the rows. Added E2 (settings panel UI); bubble placement folded into E1. |
+| 2026-09-16 | Gateway model probe, 8 calls, all HTTP 200. `reasoning_split: true` returns clean content with reasoning separated on `MiniMax-M2.7-highspeed`, `MiniMax-M3` and `MiniMax-M2.5-highspeed`; without it, all three return `<think>` inline. **No model rejects the parameter**, so C0's 4xx fallback cannot be exercised against this gateway and stays defensive-only. `glm-5.3` accepts it but returned **empty content** with 631 chars of reasoning (`max_tokens: 200`, so truncation is the likely cause but is unconfirmed) — a silent-empty-bubble risk, not a 4xx. Grace confirmed production and A/B both stay on MiniMax. |
