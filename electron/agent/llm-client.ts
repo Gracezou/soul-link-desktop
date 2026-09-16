@@ -1,4 +1,4 @@
-import { createApiLogger } from '../logger'
+import { createApiLogger, createLogger } from '../logger'
 import type { AgentConfig } from './types'
 
 type ChatMessage = { role: string; content: string }
@@ -19,12 +19,15 @@ type OpenAIStreamChunk = {
 
 const REQUEST_TIMEOUT_MS = 30_000
 const MAX_NETWORK_RETRIES = 2
+const REASONING_SPLIT_UNSUPPORTED_RE = /(?:\breasoning_split\b|\b(?:unsupported|invalid|unknown)\b[\s\S]{0,40}\b(?:parameter|field|argument)\b|\b(?:parameter|field|argument)\b[\s\S]{0,40}\b(?:unsupported|invalid|unknown)\b)/i
 
 export class LlmClient {
   private readonly baseUrl: string
   private readonly apiKey: string
   private readonly model: string
   private readonly apiLog = createApiLogger()
+  private readonly log = createLogger('LlmClient')
+  private reasoningSplitSupported = true
 
   constructor(config: Pick<AgentConfig, 'baseUrl' | 'apiKey' | 'model'>) {
     this.baseUrl = config.baseUrl.replace(/\/+$/, '')
@@ -65,6 +68,7 @@ export class LlmClient {
       model: this.model,
       messages,
       stream: false,
+      reasoning_split: true,
     }
     if (options?.temperature !== undefined) body.temperature = options.temperature
     if (options?.max_tokens !== undefined) body.max_tokens = options.max_tokens
@@ -85,7 +89,8 @@ export class LlmClient {
     const body = {
       model: this.model,
       messages: [{ role: 'user', content: 'ping' }],
-      stream: false
+      stream: false,
+      reasoning_split: true,
     }
 
     let lastNetworkError: unknown = null
@@ -133,7 +138,8 @@ export class LlmClient {
     const response = await this.request('/chat/completions', {
       model: this.model,
       messages,
-      stream: true
+      stream: true,
+      reasoning_split: true,
     })
 
     if (!response.ok) {
@@ -216,6 +222,19 @@ export class LlmClient {
   }
 
   private async request(path: string, payload: Record<string, unknown>): Promise<Response> {
+    const requestPayload = this.withReasoningSplitSupport(payload)
+    const response = await this.fetchOnce(path, requestPayload)
+
+    if (await this.shouldRetryWithoutReasoningSplit(response, requestPayload)) {
+      this.reasoningSplitSupported = false
+      this.log.warn('reasoning_split unsupported, retried without')
+      return this.fetchOnce(path, this.withReasoningSplitSupport(requestPayload))
+    }
+
+    return response
+  }
+
+  private async fetchOnce(path: string, payload: Record<string, unknown>): Promise<Response> {
     const abortController = new AbortController()
     const timeout = setTimeout(() => abortController.abort(), REQUEST_TIMEOUT_MS)
 
@@ -232,6 +251,33 @@ export class LlmClient {
     } finally {
       clearTimeout(timeout)
     }
+  }
+
+  private withReasoningSplitSupport(payload: Record<string, unknown>): Record<string, unknown> {
+    if (this.reasoningSplitSupported || !Object.prototype.hasOwnProperty.call(payload, 'reasoning_split')) {
+      return payload
+    }
+
+    const requestPayload = { ...payload }
+    delete requestPayload.reasoning_split
+    return requestPayload
+  }
+
+  private async shouldRetryWithoutReasoningSplit(
+    response: Response,
+    payload: Record<string, unknown>
+  ): Promise<boolean> {
+    if (
+      !this.reasoningSplitSupported
+      || payload.reasoning_split !== true
+      || response.status < 400
+      || response.status >= 500
+    ) {
+      return false
+    }
+
+    const responseText = await response.clone().text().catch(() => '')
+    return REASONING_SPLIT_UNSUPPORTED_RE.test(responseText)
   }
 
   private async readResponseSnippet(response: Response): Promise<string> {

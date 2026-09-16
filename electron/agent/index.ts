@@ -8,7 +8,7 @@ import { LlmClient } from './llm-client'
 import { MemoryStore } from './memory-store'
 import { checkOutOfCharacter } from './ooc-detector'
 import { SessionStore } from './session-store'
-import { extractEmotionFromResponse } from './tag-utils'
+import { extractEmotionFromResponse, stripThinking } from './tag-utils'
 import { estimateMessagesTokens } from './token-counter'
 import type { AgentConfig, CharacterCard, ChatMessage, Session, StreamCallbacks } from './types'
 
@@ -108,7 +108,7 @@ export class SoulLinkAgent {
         return
       }
 
-      const finalText = result.fullText.trim()
+      const finalText = stripThinking(result.fullText).trim()
       const ooc = checkOutOfCharacter(finalText)
 
       if (ooc.detected && attempt < OOC_RETRY_LIMIT) {
@@ -246,7 +246,7 @@ export class SoulLinkAgent {
           fullText += delta
           deltaCount += 1
           // Send accumulated text, not incremental delta
-          callbacks.onDelta?.(messageId, fullText)
+          callbacks.onDelta?.(messageId, stripThinking(fullText))
         },
         onComplete: (completedText) => {
           const text = completedText.length > 0 ? completedText : fullText
