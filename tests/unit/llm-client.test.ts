@@ -127,12 +127,35 @@ describe('LlmClient reasoning_split requests', () => {
     expect(requestBody(0)).toHaveProperty('reasoning_split', true)
     expect(requestBody(1)).not.toHaveProperty('reasoning_split')
     expect(mockWarn).toHaveBeenCalledTimes(1)
-    expect(mockWarn).toHaveBeenCalledWith('reasoning_split unsupported, retried without')
+    expect(mockWarn).toHaveBeenCalledWith('reasoning_split unsupported, retried without', {
+      model: 'test-model',
+      path: '/chat/completions',
+      status: 400,
+    })
 
     await expect(client.chatCompletion([{ role: 'user', content: 'second' }])).resolves.toBe('hello')
 
     expect(fetchMock).toHaveBeenCalledTimes(3)
     expect(requestBody(2)).not.toHaveProperty('reasoning_split')
+    expect(mockWarn).toHaveBeenCalledTimes(1)
+  })
+
+  test('downgrades when an uppercase reasoning_split field is rejected', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: { message: 'Unknown parameter: REASONING_SPLIT' } }, 400))
+      .mockResolvedValueOnce(jsonResponse({ choices: [{ message: { content: 'hello' } }] }))
+
+    const client = new LlmClient({
+      baseUrl: 'https://example.test/v1',
+      apiKey: 'test-key',
+      model: 'test-model',
+    })
+
+    await expect(client.chatCompletion([{ role: 'user', content: 'hi' }])).resolves.toBe('hello')
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(requestBody(0)).toHaveProperty('reasoning_split', true)
+    expect(requestBody(1)).not.toHaveProperty('reasoning_split')
     expect(mockWarn).toHaveBeenCalledTimes(1)
   })
 
@@ -149,5 +172,75 @@ describe('LlmClient reasoning_split requests', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(mockWarn).not.toHaveBeenCalled()
+  })
+
+  test.each([
+    "Unsupported parameter: 'max_tokens' is not supported with this model",
+    "Unknown field: 'top_p_x' in the request body",
+  ])('does not downgrade for an unrelated field error: %s', async (message) => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: { message } }, 400))
+      .mockResolvedValueOnce(jsonResponse({ choices: [{ message: { content: 'hello' } }] }))
+
+    const client = new LlmClient({
+      baseUrl: 'https://example.test/v1',
+      apiKey: 'test-key',
+      model: 'test-model',
+    })
+
+    await expect(client.chatCompletion([{ role: 'user', content: 'first' }]))
+      .rejects.toThrow('HTTP 400')
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(mockWarn).not.toHaveBeenCalled()
+
+    await expect(client.chatCompletion([{ role: 'user', content: 'second' }])).resolves.toBe('hello')
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(requestBody(1)).toHaveProperty('reasoning_split', true)
+    expect(mockWarn).not.toHaveBeenCalled()
+  })
+
+  test('does not downgrade for an adjacent reasoning_split field name', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ error: { message: 'Unknown field: reasoning_split_v2' } }, 400))
+      .mockResolvedValueOnce(jsonResponse({ choices: [{ message: { content: 'hello' } }] }))
+
+    const client = new LlmClient({
+      baseUrl: 'https://example.test/v1',
+      apiKey: 'test-key',
+      model: 'test-model',
+    })
+
+    await expect(client.chatCompletion([{ role: 'user', content: 'first' }]))
+      .rejects.toThrow('HTTP 400')
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(mockWarn).not.toHaveBeenCalled()
+
+    await expect(client.chatCompletion([{ role: 'user', content: 'second' }])).resolves.toBe('hello')
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(requestBody(1)).toHaveProperty('reasoning_split', true)
+    expect(mockWarn).not.toHaveBeenCalled()
+  })
+
+  test('strips thinking from completion output without trimming and logs the raw length', async () => {
+    const rawResult = '<think>private</think>  hello  '
+    fetchMock.mockResolvedValueOnce(jsonResponse({
+      choices: [{ message: { content: rawResult } }],
+    }))
+    const client = new LlmClient({
+      baseUrl: 'https://example.test/v1',
+      apiKey: 'test-key',
+      model: 'test-model',
+    })
+
+    await expect(client.chatCompletion([{ role: 'user', content: 'hi' }]))
+      .resolves.toBe('  hello  ')
+
+    expect(mockApiResponse).toHaveBeenCalledWith(expect.objectContaining({
+      responseLength: rawResult.length,
+    }))
   })
 })

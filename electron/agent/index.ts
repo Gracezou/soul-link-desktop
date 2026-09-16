@@ -109,6 +109,13 @@ export class SoulLinkAgent {
       }
 
       const finalText = stripThinking(result.fullText).trim()
+      if (result.fullText.length > 0 && finalText.length === 0) {
+        const error = 'Model response contained no visible content after removing thinking tags.'
+        this.log.error('sendMessage:emptyResponseAfterThinking', { messageId, error })
+        callbacks.onError?.(messageId, error)
+        return
+      }
+
       const ooc = checkOutOfCharacter(finalText)
 
       if (ooc.detected && attempt < OOC_RETRY_LIMIT) {

@@ -16,6 +16,13 @@ describe('stripThinking', () => {
     expect(stripThinking(text)).toBe('')
   })
 
+  test.each([
+    'before<think>unfinished reasoning',
+    'before<Thinking>unfinished reasoning',
+  ])('preserves visible text before an unclosed thinking block: %s', (text) => {
+    expect(stripThinking(text)).toBe('before')
+  })
+
   test('returns text without thinking tags unchanged', () => {
     const text = '  ordinary response\nwith preserved whitespace  '
 
@@ -32,5 +39,12 @@ describe('stripThinking', () => {
 
   test('matches tags case-insensitively', () => {
     expect(stripThinking('<ThInKiNg>internal</tHiNkInG>answer')).toBe('answer')
+  })
+
+  test.each([
+    ['internal reasoning</think>answer', 'answer'],
+    ['first</think>middle</THINKING>answer', 'answer'],
+  ])('removes content through the last orphaned closing tag: %s', (text, expected) => {
+    expect(stripThinking(text)).toBe(expected)
   })
 })

@@ -1,4 +1,5 @@
 import { createApiLogger, createLogger } from '../logger'
+import { stripThinking } from './tag-utils'
 import type { AgentConfig } from './types'
 
 type ChatMessage = { role: string; content: string }
@@ -19,7 +20,7 @@ type OpenAIStreamChunk = {
 
 const REQUEST_TIMEOUT_MS = 30_000
 const MAX_NETWORK_RETRIES = 2
-const REASONING_SPLIT_UNSUPPORTED_RE = /(?:\breasoning_split\b|\b(?:unsupported|invalid|unknown)\b[\s\S]{0,40}\b(?:parameter|field|argument)\b|\b(?:parameter|field|argument)\b[\s\S]{0,40}\b(?:unsupported|invalid|unknown)\b)/i
+const REASONING_SPLIT_FIELD_RE = /\breasoning_split\b/i
 
 export class LlmClient {
   private readonly baseUrl: string
@@ -82,7 +83,7 @@ export class LlmClient {
     const payload = await response.json() as { choices?: Array<{ message?: { content?: string } }> }
     const result = payload?.choices?.[0]?.message?.content ?? ''
     this.apiLog.response({ purpose: 'completion', latencyMs: Date.now() - startTime, status: response.status, responseLength: result.length })
-    return result
+    return stripThinking(result)
   }
 
   async testConnection(): Promise<{ success: boolean; error?: string }> {
@@ -227,7 +228,11 @@ export class LlmClient {
 
     if (await this.shouldRetryWithoutReasoningSplit(response, requestPayload)) {
       this.reasoningSplitSupported = false
-      this.log.warn('reasoning_split unsupported, retried without')
+      this.log.warn('reasoning_split unsupported, retried without', {
+        model: this.model,
+        path,
+        status: response.status,
+      })
       return this.fetchOnce(path, this.withReasoningSplitSupport(requestPayload))
     }
 
@@ -277,7 +282,7 @@ export class LlmClient {
     }
 
     const responseText = await response.clone().text().catch(() => '')
-    return REASONING_SPLIT_UNSUPPORTED_RE.test(responseText)
+    return REASONING_SPLIT_FIELD_RE.test(responseText)
   }
 
   private async readResponseSnippet(response: Response): Promise<string> {
