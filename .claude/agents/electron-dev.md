@@ -7,6 +7,8 @@ description: >
 model: sonnet
 tools:
   - Read
+  - Edit
+  - Write
   - Bash
   - Glob
   - Grep
