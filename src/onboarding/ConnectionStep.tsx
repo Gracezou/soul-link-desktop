@@ -112,7 +112,7 @@ export function ConnectionStep({
         )}
       </div>
 
-      <p className={styles.stepSubtitle}>{t('onboarding.connection.skipHint')}</p>
+      <p className={styles.skipHint}>{t('onboarding.connection.skipHint')}</p>
 
       <div className={styles.navRow}>
         <button className={styles.btnSecondary} onClick={onBack}>{t('common.back')}</button>
