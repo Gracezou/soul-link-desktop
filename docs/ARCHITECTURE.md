@@ -217,7 +217,7 @@ src/                 渲染进程（ESM，vite → dist/），单 HTML 按 ?page
 <!-- 以下整节将逐字复制进 .claude/agents/architect.md，替换旧的 bridge lifecycle 内容 -->
 
 - **Agent 事件契约**（`electron/ipc.ts` 常量 → petWindow）。载荷类型定义在 `electron/agent/types.ts`，改名或改形状需同步 `preload.ts` 顶部注释块：
-  - `agent:ready` `{ ready: boolean; character: string; llmConfigured: boolean }` —— `ready` 表示数据库与角色卡就绪；`llmConfigured` 表示 Agent 构造时 `baseUrl`/`apiKey`/`model` 均非空（缺失按空处理），**不代表网关可达**。渲染端每次收到都要更新，不得只取首次（C1 广播与热更新依赖这一点）。`agent:get-status` 返回同一形状（类型 `AgentStatus`）
+  - `agent:ready` `{ ready: boolean; character: string; llmConfigured: boolean }` —— `ready` 表示数据库与角色卡就绪；`llmConfigured` 表示 Agent 构造时 `baseUrl`/`apiKey`/`model` 在 `trim()` 后均非空（缺失按空处理，只含空白也算未配置），**不代表网关可达**。渲染端每次收到都要更新，不得只取首次（C1 广播与热更新依赖这一点）。`agent:get-status` 返回同一形状（类型 `AgentStatus`）
   - `agent:waiting` `{ messageId: string }`
   - `agent:delta` `{ messageId: string; delta: string }` — **`delta` 是累计全文，不是增量**；消费端整体替换。修改此语义会同时破坏 `ChatBubbleFeedback` 的打字机与 runId 去重。
   - `agent:final` `{ messageId: string; text: string }`

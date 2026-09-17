@@ -88,7 +88,7 @@ window.
 Agent events declared in `electron/ipc.ts`:
 
 - `agent:ready` - `{ ready, character, llmConfigured }`; `llmConfigured` means the
-  Agent's construction-time `baseUrl`/`apiKey`/`model` are all non-empty (not
+  Agent's construction-time `baseUrl`/`apiKey`/`model` are all non-empty after trimming, with missing fields treated as empty (not
   that the gateway is reachable). Renderers update it on every event.
   `agent:get-status` returns the same shape.
 - `agent:waiting` - `{ messageId }`
@@ -176,8 +176,6 @@ that connection is part of v0.2.0.
 - `res/sprites/baiyuan/frames/` is empty although
   `res/sprites/baiyuan/manifest.json` names animations;
   the pet currently falls back to placeholder rendering.
-- Logging is implemented in `electron/logger.ts`, but `electron/main.ts` does not
-  call `initLogging()` or `shutdownLogging()`.
 - Agent callbacks in `electron/main.ts` send lifecycle events only to petWindow,
   not the chat window.
 - Packaged CSP in `electron/main.ts` does not yet allow the `res:` fetch scheme.

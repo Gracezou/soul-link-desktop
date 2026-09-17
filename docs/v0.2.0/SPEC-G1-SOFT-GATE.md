@@ -314,7 +314,7 @@ Windows 打包态对应的目录是 `%APPDATA%\Soul Link Desktop\`。
 | M6 | 在 M1 的状态下直接退出再启动 | 不出现引导页，直接显示 pet 和未配置提示（旧门禁会强制进入引导页） |
 | M7 | 在未配置状态下，通过托盘「打开聊天」打开 chat 窗口 | 输入框和发送按钮都是禁用状态，显示未配置提示。**托盘图标在 D2 完成前是空白的**，macOS 上可能点不到；点不到时把本项标为「阻塞于 D2」，不算失败 |
 | M8 | 手工编辑 `settings.json`，设置 `completed: true`，并**只把 `cpa.apiKey` 的值改成 `""`，不要删除键** → 启动 | 进主界面，显示未配置提示（D4） |
-| M8b | 手工编辑 `settings.json`，保持 `completed: true`，**删除 `cpa.model` 键**（其余字段保留有效值）→ 启动 | 与 M8 相同：进主界面、显示未配置提示；工具栏正常、托盘可用；ops 日志有 `LLM not configured` warn，**stderr 无未处理的 rejection**。用于直接验证 §4.2 的缺字段容错 |
+| M8b | 手工编辑 `settings.json`，保持 `completed: true`，**删除 `cpa.model` 键**（其余字段保留有效值）→ 启动 | 与 M8 相同：进主界面、显示未配置提示；工具栏正常、托盘可用；ops 日志有 `LLM not configured` warn，**stderr 无未处理的 rejection**。用于直接验证 §4.2 的缺字段容错。⚠️ 之后打开设置页，模型输入框会预填默认值 `MiniMax-M2`，此时直接点保存**不会出现重启横幅**（`changed` 比较用的也是同一默认值）；但文件已补上 `model`，手动重启即生效。**这不是失败**，不要据此判 M8b 不通过 |
 | M9 | 「设置 → 关于 → 重新运行初始化引导」 | 应用重启后回到引导页，「稍后配置」按钮仍然可用 |
 | M10 | 行为确认，**不判定通过或失败**：Connection 填入格式正确但网关不可达的值 → 测试失败 → 点「稍后配置」→ 完成 | 这些值被保存，`llmConfigured` 为 true，显示正常输入框；发出消息后气泡停在「···」。这是 E1 的已知范围（§9 第 2 条），**审查时不要把它当作 G1 的缺陷** |
 | M11 | M1 之后查看 `ops-*.jsonl` | 有一条 `LLM not configured` warn，内容不含 key |
