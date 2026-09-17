@@ -26,6 +26,7 @@ import { createLogger, initLogging, shutdownLogging } from './logger'
 
 const mainLogger = createLogger('Main')
 import { SoulLinkAgent } from './agent'
+import type { AgentStatus } from './agent/types'
 import { createPetWindow } from './windows/petWindow'
 import { createChatWindow } from './windows/chatWindow'
 import { createSettingsWindow } from './windows/settingsWindow'
@@ -205,13 +206,23 @@ function setupIpcHandlers(): void {
   })
 
   ipcMain.handle(IPC.AGENT_GET_STATUS, () => {
-    return { ready: agentReady, character: getSettings().character.cardName }
+    const status: AgentStatus = {
+      ready: agentReady,
+      character: getSettings().character.cardName,
+      llmConfigured: agent?.isLlmConfigured() ?? false,
+    }
+    return status
   })
 
   ipcMain.on(IPC.AGENT_RESET_SESSION, async () => {
     if (!agent) return
     await agent.resetSession()
-    petWindow?.webContents.send(IPC.AGENT_READY, { ready: true, character: getSettings().character.cardName })
+    const status: AgentStatus = {
+      ready: true,
+      character: getSettings().character.cardName,
+      llmConfigured: agent.isLlmConfigured(),
+    }
+    petWindow?.webContents.send(IPC.AGENT_READY, status)
   })
 
   ipcMain.on('window:close', (event) => {
@@ -452,10 +463,18 @@ function launchMainApp(): void {
     systemPromptBudget: 2000,
     outputReserve: 500,
   })
+  if (!agent.isLlmConfigured()) {
+    mainLogger.warn('LLM not configured; chat disabled until connection is saved and the app restarts')
+  }
   agent.initialize().then(() => {
     agentReady = true
     if (petWindow && !petWindow.isDestroyed()) {
-      petWindow.webContents.send(IPC.AGENT_READY, { ready: true, character: settings.character.cardName })
+      const status: AgentStatus = {
+        ready: true,
+        character: settings.character.cardName,
+        llmConfigured: agent?.isLlmConfigured() ?? false,
+      }
+      petWindow.webContents.send(IPC.AGENT_READY, status)
     }
   }).catch((err: Error) => {
     mainLogger.error('Agent initialization failed:', err.message)

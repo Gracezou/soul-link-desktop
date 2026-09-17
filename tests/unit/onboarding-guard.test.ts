@@ -20,22 +20,40 @@ describe('needsOnboarding', () => {
     expect(needsOnboarding(settings)).toBe(true)
   })
 
-  test('returns true when onboarding is completed but baseUrl is empty', () => {
+  test('returns false when onboarding is completed but baseUrl is empty', () => {
     const settings = {
       onboarding: { completed: true },
       cpa: { baseUrl: '', apiKey: 'secret', model: 'gpt-4o-mini' },
     } as unknown as SoulLinkSettings
 
-    expect(needsOnboarding(settings)).toBe(true)
+    expect(needsOnboarding(settings)).toBe(false)
   })
 
-  test('returns true when onboarding is completed but apiKey is empty', () => {
+  test('returns false when onboarding is completed but apiKey is empty', () => {
     const settings = {
       onboarding: { completed: true },
       cpa: { baseUrl: 'https://api.example.com', apiKey: '', model: 'gpt-4o-mini' },
     } as unknown as SoulLinkSettings
 
-    expect(needsOnboarding(settings)).toBe(true)
+    expect(needsOnboarding(settings)).toBe(false)
+  })
+
+  test('returns false when onboarding is completed and both connection fields are empty', () => {
+    const settings = {
+      onboarding: { completed: true },
+      cpa: { baseUrl: '', apiKey: '', model: 'gpt-4o-mini' },
+    } as unknown as SoulLinkSettings
+
+    expect(needsOnboarding(settings)).toBe(false)
+  })
+
+  test('returns false when onboarding is completed and all CPA fields are empty', () => {
+    const settings = {
+      onboarding: { completed: true },
+      cpa: { baseUrl: '', apiKey: '', model: '' },
+    } as unknown as SoulLinkSettings
+
+    expect(needsOnboarding(settings)).toBe(false)
   })
 
   test('returns false when onboarding is completed and CPA values are non-empty after trim', () => {

@@ -7,7 +7,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 // Expected channels used by this app:
 //
 // Push events (main → renderer, use .on()):
-//   agent:ready          — { ready: boolean, character: string }
+//   agent:ready          — { ready: boolean, character: string, llmConfigured: boolean }
 //   agent:waiting        — { messageId: string }
 //   agent:delta          — { messageId: string, delta: string }
 //   agent:final          — { messageId: string, text: string }
@@ -21,7 +21,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 //   settings:set         — (partial: Partial<SoulLinkSettings>) => void
 //   agent:get-history    — returns ChatMessage[]
 //   agent:test-connection — ({ baseUrl, apiKey, model }) => { success, error? }
-//   agent:get-status     — returns { ready: boolean, character: string }
+//   agent:get-status     — returns { ready: boolean, character: string, llmConfigured: boolean }
 //   cards:list           — returns CardInfo[]
 //   window:open-history  — opens history window
 //   companion:status     — returns { running: boolean }

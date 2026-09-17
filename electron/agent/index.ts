@@ -22,6 +22,8 @@ const OOC_RETRY_SYSTEM_MESSAGE = 'Please stay in character. Do not mention that 
 
 const COMPRESSION_THRESHOLD = 30
 
+export const LLM_NOT_CONFIGURED_ERROR = 'LLM not configured'
+
 export class SoulLinkAgent {
   private readonly config: AgentConfig
   private readonly characterEngine: CharacterEngine
@@ -61,7 +63,21 @@ export class SoulLinkAgent {
     this.log.info('initialize:complete', { character: card.name, sessionId: this.currentSession.id })
   }
 
+  isLlmConfigured(): boolean {
+    return Boolean(
+      this.config.baseUrl.trim() &&
+      this.config.apiKey.trim() &&
+      this.config.model.trim()
+    )
+  }
+
   async sendMessage(text: string, callbacks: StreamCallbacks): Promise<void> {
+    if (!this.isLlmConfigured()) {
+      this.log.warn('sendMessage:llmNotConfigured')
+      callbacks.onError?.('', LLM_NOT_CONFIGURED_ERROR)
+      return
+    }
+
     const session = this.ensureSession()
     const card = this.currentCard!
     const userText = text.trim()

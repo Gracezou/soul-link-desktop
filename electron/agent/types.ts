@@ -76,4 +76,6 @@ export interface MessageSavedPayload {
 export interface AgentStatus {
   ready: boolean
   character: string
+  /** Agent construction-time baseUrl/apiKey/model are all non-empty. Does not imply gateway reachability. */
+  llmConfigured: boolean
 }
