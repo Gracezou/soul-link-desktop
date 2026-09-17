@@ -453,9 +453,9 @@ function launchMainApp(): void {
   const settings = getSettings()
   const dbPath = getDBPath()
   agent = new SoulLinkAgent({
-    baseUrl: settings.cpa.baseUrl,
-    apiKey: settings.cpa.apiKey,
-    model: settings.cpa.model,
+    baseUrl: settings.cpa.baseUrl ?? '',
+    apiKey: settings.cpa.apiKey ?? '',
+    model: settings.cpa.model ?? '',
     cardName: settings.character.cardName,
     dbPath,
     resBase: process.env.SOUL_LINK_RES_BASE!,

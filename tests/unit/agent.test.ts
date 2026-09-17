@@ -19,7 +19,9 @@ describe('SoulLinkAgent LLM configuration gate', () => {
     ['empty baseUrl', { baseUrl: '' }, false],
     ['whitespace-only baseUrl', { baseUrl: '  ' }, false],
     ['empty apiKey', { apiKey: '' }, false],
+    ['whitespace-only apiKey', { apiKey: '  ' }, false],
     ['empty model', { model: '' }, false],
+    ['whitespace-only model', { model: '  ' }, false],
     ['non-empty fields', {}, true],
     [
       'trimmed non-empty fields',
@@ -63,6 +65,46 @@ describe('SoulLinkAgent LLM configuration gate', () => {
     expect(streamChat).not.toHaveBeenCalled()
     expect(warn).toHaveBeenCalledWith('sendMessage:llmNotConfigured')
     expect(JSON.stringify(warn.mock.calls)).not.toContain(apiKey)
+  })
+
+  test.each(['baseUrl', 'apiKey', 'model'])(
+    'treats undefined %s as unconfigured without throwing',
+    (field) => {
+      const agent = new SoulLinkAgent(configuredAgentConfig)
+      const internal = agent as any
+      internal.config = { ...configuredAgentConfig, [field]: undefined }
+
+      expect(() => agent.isLlmConfigured()).not.toThrow()
+      expect(agent.isLlmConfigured()).toBe(false)
+    },
+  )
+
+  test('routes sendMessage through the unconfigured path when a field is undefined', async () => {
+    const agent = new SoulLinkAgent(configuredAgentConfig)
+    const internal = agent as any
+    internal.config = { ...configuredAgentConfig, model: undefined }
+    const saveMessage = jest.fn()
+    const streamChat = jest.fn()
+    const warn = jest.fn()
+    internal.sessionStore.saveMessage = saveMessage
+    internal.llmClient.streamChat = streamChat
+    internal.log = { info: jest.fn(), warn, error: jest.fn() }
+
+    const callbacks = {
+      onWaiting: jest.fn(),
+      onDelta: jest.fn(),
+      onFinal: jest.fn(),
+      onError: jest.fn(),
+      onSaved: jest.fn(),
+    }
+
+    await expect(agent.sendMessage('hi', callbacks)).resolves.toBeUndefined()
+
+    expect(callbacks.onError).toHaveBeenCalledTimes(1)
+    expect(callbacks.onError).toHaveBeenCalledWith('', LLM_NOT_CONFIGURED_ERROR)
+    expect(callbacks.onWaiting).not.toHaveBeenCalled()
+    expect(saveMessage).not.toHaveBeenCalled()
+    expect(streamChat).not.toHaveBeenCalled()
   })
 })
 

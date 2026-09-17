@@ -65,9 +65,9 @@ export class SoulLinkAgent {
 
   isLlmConfigured(): boolean {
     return Boolean(
-      this.config.baseUrl.trim() &&
-      this.config.apiKey.trim() &&
-      this.config.model.trim()
+      (this.config.baseUrl ?? '').trim() &&
+      (this.config.apiKey ?? '').trim() &&
+      (this.config.model ?? '').trim()
     )
   }
 
