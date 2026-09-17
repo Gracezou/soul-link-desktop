@@ -87,7 +87,10 @@ window.
 
 Agent events declared in `electron/ipc.ts`:
 
-- `agent:ready` - `{ ready, character }`
+- `agent:ready` - `{ ready, character, llmConfigured }`; `llmConfigured` means the
+  Agent's construction-time `baseUrl`/`apiKey`/`model` are all non-empty (not
+  that the gateway is reachable). Renderers update it on every event.
+  `agent:get-status` returns the same shape.
 - `agent:waiting` - `{ messageId }`
 - `agent:delta` - `{ messageId, delta }`; `delta` is cumulative response text,
   not an incremental chunk. Consumers replace, not append.
@@ -158,7 +161,10 @@ paths must use `electron/utils/paths.ts`. `sql.js` must remain unpacked from ASA
 - Pet: transparent, frameless, always-on-top renderer for `PetApp`.
 - Chat: frameless popup positioned near the pet.
 - Settings: fixed settings window.
-- Onboarding: first-run configuration guarded by `utils/onboardingGuard.ts`.
+- Onboarding: first-run configuration guarded by `utils/onboardingGuard.ts`,
+  which checks only `onboarding.completed`. The connection step can be skipped
+  ("configure later"); an unconfigured Agent is still constructed and
+  initialized, and `sendMessage()` rejects before saving anything.
 - History: resizable frameless window created in `main.ts`.
 
 `CompanionScheduler` currently emits fixed `companion:nudge` messages, but the

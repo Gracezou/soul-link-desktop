@@ -109,9 +109,9 @@ src/                 渲染进程（ESM，vite → dist/），单 HTML 按 ?page
 | onboarding | `windows/onboardingWindow.ts` | `?page=onboarding` | 同上 | 640×720、有边框、居中 |
 | history | **`main.ts` 内联** | `?page=history` | 同上 | 400×600、无边框、可缩放 |
 
-启动流程（`app.whenReady`）：注册 `res://` 协议 → 打包态注入 CSP → `setupIpcHandlers()` → `needsOnboarding(settings)`（`onboarding.completed` 为 false 或 `cpa.baseUrl`/`cpa.apiKey` 为空）→ 是则开 onboarding 窗口，`onboarding:complete` 后再 `launchMainApp()`；否则直接 `launchMainApp()`。
+启动流程（`app.whenReady`）：注册 `res://` 协议 → 打包态注入 CSP → `setupIpcHandlers()` → `needsOnboarding(settings)`（**只看** `onboarding.completed` 是否为 false；G1 起连接凭据不再作为引导门禁，引导页可「稍后配置」跳过连接步骤）→ 是则开 onboarding 窗口，`onboarding:complete` 后再 `launchMainApp()`；否则直接 `launchMainApp()`。
 
-`launchMainApp()`：建 petWindow（读取 `pet.positionX/Y`，`moved` 事件 500ms 防抖回写）→ `setupTray()` → 用 settings 快照构造 `SoulLinkAgent`（`maxTotalTokens:8000 / systemPromptBudget:2000 / outputReserve:500`）→ `initialize()` 成功后置 `agentReady=true` 并向 petWindow 推 `agent:ready` → 建 `CompanionScheduler`，`companion.enabled` 时 `start()`。
+`launchMainApp()`：建 petWindow（读取 `pet.positionX/Y`，`moved` 事件 500ms 防抖回写）→ `setupTray()` → 用 settings 快照构造 `SoulLinkAgent`（`maxTotalTokens:8000 / systemPromptBudget:2000 / outputReserve:500`；`cpa` 三字段缺失时以 `''` 兜底）。**LLM 未配置时照常构造并 `initialize()`**，仅记一条 warn，由 Agent 在 `sendMessage` 入口拦截 → `initialize()` 成功后置 `agentReady=true` 并向 petWindow 推 `agent:ready` → 建 `CompanionScheduler`，`companion.enabled` 时 `start()`。
 
 ## 3. IPC 契约
 
@@ -119,7 +119,7 @@ src/                 渲染进程（ESM，vite → dist/），单 HTML 按 ?page
 
 | 通道 | 方向/机制 | 载荷类型 | 接收/发起窗口 |
 |---|---|---|---|
-| `agent:ready` | main→renderer (send) | `{ ready: boolean; character: string }` | **仅 petWindow**（`useAgent`） |
+| `agent:ready` | main→renderer (send) | `{ ready: boolean; character: string; llmConfigured: boolean }` | **仅 petWindow**（`useAgent`） |
 | `agent:waiting` | main→renderer | `{ messageId: string }` | **仅 petWindow**（`ChatBubbleFeedback`） |
 | `agent:delta` | main→renderer | `{ messageId: string; delta: string }` — **delta = 累计全文** | **仅 petWindow** |
 | `agent:final` | main→renderer | `{ messageId: string; text: string }` | **仅 petWindow**（气泡 + `useAgent`） |
@@ -129,7 +129,7 @@ src/                 渲染进程（ESM，vite → dist/），单 HTML 按 ?page
 | `agent:get-history` | invoke | `() => ChatMessage[]` | `ChatHistory` |
 | `agent:reset` | renderer→main (send) | `void` | handler 存在，**无调用者** |
 | `agent:test-connection` | invoke | `({baseUrl,apiKey,model}) => { success: boolean; error?: string }` | `ConnectionStep`、`ConnectionSection` |
-| `agent:get-status` | invoke | `() => { ready: boolean; character: string }` | `useAgent` |
+| `agent:get-status` | invoke | `() => { ready: boolean; character: string; llmConfigured: boolean }`（`agent` 为 null 时 `llmConfigured:false`） | `useAgent`（任意窗口；chat 窗口靠它拿 `llmConfigured`） |
 | `settings:get` | invoke | `() => SoulLinkSettings` | `App.tsx`、`SettingsPanel`、`OnboardingWizard` |
 | `settings:set` | invoke | `(Partial<SoulLinkSettings>) => void`，成功后向**所有窗口**广播 `settings:changed` | 4 个 settings section + onboarding |
 | `settings:changed` | main→renderer (广播) | `SoulLinkSettings`（全量） | `App.tsx`（仅用 `ui.theme`） |
@@ -171,6 +171,7 @@ src/                 渲染进程（ESM，vite → dist/），单 HTML 按 ?page
         │
         ▼  main.ts AGENT_SEND handler
    SoulLinkAgent.sendMessage(text, callbacks)
+        ├─ !isLlmConfigured() → onError('', 'LLM not configured') 后返回（G1；早于 onWaiting / saveMessage，不写库、不抛错）
         ├─ crypto.randomUUID() → messageId ─────────► onWaiting  ──► petWindow  agent:waiting
         ├─ sessionStore.saveMessage(user)
         ├─ memoryStore.getMemoriesForPrompt() + sessionStore.getSessionSummary()
@@ -216,14 +217,14 @@ src/                 渲染进程（ESM，vite → dist/），单 HTML 按 ?page
 <!-- 以下整节将逐字复制进 .claude/agents/architect.md，替换旧的 bridge lifecycle 内容 -->
 
 - **Agent 事件契约**（`electron/ipc.ts` 常量 → petWindow）。载荷类型定义在 `electron/agent/types.ts`，改名或改形状需同步 `preload.ts` 顶部注释块：
-  - `agent:ready` `{ ready: boolean; character: string }`
+  - `agent:ready` `{ ready: boolean; character: string; llmConfigured: boolean }` —— `ready` 表示数据库与角色卡就绪；`llmConfigured` 表示 Agent 构造时 `baseUrl`/`apiKey`/`model` 均非空（缺失按空处理），**不代表网关可达**。渲染端每次收到都要更新，不得只取首次（C1 广播与热更新依赖这一点）。`agent:get-status` 返回同一形状（类型 `AgentStatus`）
   - `agent:waiting` `{ messageId: string }`
   - `agent:delta` `{ messageId: string; delta: string }` — **`delta` 是累计全文，不是增量**；消费端整体替换。修改此语义会同时破坏 `ChatBubbleFeedback` 的打字机与 runId 去重。
   - `agent:final` `{ messageId: string; text: string }`
   - `agent:error` `{ messageId: string; error: string }`
   - `agent:message-saved` `{ message: ChatMessage }` — 仅发 history window
   - 上行：`agent:send` `{ message: string }`（send）；`agent:get-history` / `agent:get-status` / `agent:test-connection`（invoke）
-- **`SoulLinkAgent` 生命周期**：`new SoulLinkAgent(AgentConfig)` → `await initialize()`（初始化 sql.js、载入角色卡、`getOrCreateSession`）→ `sendMessage(text, StreamCallbacks)`（可多次；内部含 ≤2 次 OOC 重试与异步 postProcess）→ `dispose()`（关闭 DB）。`sendMessage` 在 `initialize()` 之前调用会抛错。
+- **`SoulLinkAgent` 生命周期**：`new SoulLinkAgent(AgentConfig)` → `await initialize()`（初始化 sql.js、载入角色卡、`getOrCreateSession`）→ `sendMessage(text, StreamCallbacks)`（可多次；内部含 ≤2 次 OOC 重试与异步 postProcess）→ `dispose()`（关闭 DB）。`sendMessage` 在 `initialize()` 之前调用会抛错——**例外**：LLM 未配置时它在入口即以 `onError('', LLM_NOT_CONFIGURED_ERROR)` 返回，不抛错、不写库、不触发 `onWaiting`。
 - **`electron/agent/` 的零 Electron 依赖约束**：该目录设计为可整体外提为独立服务，除既有的 `logger.ts` 妥协外，不得引入 `ipcMain` / `BrowserWindow` / `electron-store` / `app`。所有 Electron 集成只发生在 `main.ts`。
 - **Settings schema**（`electron/store/settings.ts` `SoulLinkSettings`）六段：`cpa{baseUrl,apiKey,model}`、`character{cardName}`、`companion{enabled,idleMinutes,mode:'balanced'|'checkin'|'question'|'report'}`、`pet{character,positionX,positionY,scale}`、`ui{language,theme}`、`onboarding{completed,completedAt?}`。**`0.2.0` migration（`openclaw` → `cpa`/`character`）不可删除**——它是老用户配置的唯一迁移路径，也是全仓唯一合法出现 `openclaw` 的地方。
 - **持久化路径**：`utils/paths.ts` 的 `getResourcePath()` / `getDBPath()` 是资源与数据库寻址的唯一入口，不得在别处硬编码 `process.resourcesPath` 或 `userData`（`main.ts` 设置 `SOUL_LINK_RES_BASE` 的那处除外）。

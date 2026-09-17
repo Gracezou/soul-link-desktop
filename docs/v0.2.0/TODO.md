@@ -63,6 +63,9 @@
 - [ ] **F8** `package.json` version → `0.2.0`
 - [ ] **F9** 验证 legacy migration：构造含 `openclaw` 段的旧 `settings.json` → 启动 → 确认迁移为 `cpa` + `character` 且 `openclaw` 键被删
       ⚠️ 该迁移在版本停在 `0.1.0` 时**从不执行**，bump 那一刻才首次生效，属首次上线代码
+      G1 追加两条用例（[`SPEC-G1-SOFT-GATE.md`](./SPEC-G1-SOFT-GATE.md) §6.3）：
+      - **F9-a** `{ "openclaw": { "authToken": "t", "defaultCard": "baiyuan" }, "onboarding": { "completed": true } }` → 迁移为 `cpa.apiKey="t"`、`cpa.baseUrl=""`，`openclaw` 键删除；启动后**直接进主界面并显示未配置提示**
+      - **F9-b** `{ "openclaw": { "authToken": "t" } }`（无 `onboarding` 键）→ 迁移同上，`completed` 为 false；启动后**进入引导页**，ConnectionStep 的 API Key 预填为 `t`
 - [ ] **F10** 双平台实机：macOS `.dmg`（x64 + arm64）、Windows `.exe` 安装 → 启动 → 桌宠渲染 → 日志落盘
 - [ ] **F10.5** `CHANGELOG.md` 定版为 `0.2.0`
 - [ ] **F11** `git tag v0.2.0 && git push --tags`

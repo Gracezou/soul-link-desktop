@@ -3,6 +3,7 @@
 > 交付对象：`electron-dev` + `frontend-dev` · Phase 2 architect 产出 · 2026-09-17
 > 上游依据：[`RELEASE_PLAN.md`](./RELEASE_PLAN.md)「G1」· [`TODO.md`](./TODO.md)「G · 引导流程」·
 > [`../ARCHITECTURE.md`](../ARCHITECTURE.md) §2 / §3 / §5 / §6 / §9
+> 修订 2026-09-17（实现审查后）：§4.2 缺字段容错、§5.2 `.skipHint`、§6.1 A4/A4b、§6.2 M8/M8b
 > 目标文件：`electron/` 5 个、`src/` 9 个（含 1 个新组件与 2 个 i18n 文件）、`tests/unit/` 2 个，清单见 §5
 
 ## 0. 结论速览
@@ -85,7 +86,7 @@ Agent 用的是 `launchMainApp()` 时刻的 settings **快照**。用户在设�
 - 符合 `electron/agent/` 零 Electron 依赖、可整体外提的约束。配置校验本来就是服务自身的职责
 - 可以直接沿用 `tests/unit/agent.test.ts` 现有的替换内部依赖写法做单测
 
-**「已配置」的判定**：`baseUrl`、`apiKey`、`model` 三者 `trim()` 后都非空。
+**「已配置」的判定**：`baseUrl`、`apiKey`、`model` 三者 `trim()` 后都非空；**字段缺失（`undefined`）按空串处理**。
 比旧门禁多检查了 `model`。原因是引导页和设置页的「测试连接」按钮在 `!model` 时都是禁用的，而空 model 的请求必然失败，判定条件应与按钮保持一致。
 **它不表示网关可达**，本任务不做任何网络探测。
 
@@ -186,6 +187,14 @@ class SoulLinkAgent {
 }
 ```
 
+**字段缺失时的容错（2026-09-17 修订，审查 P1）**：electron-store 只补**顶层**缺失的键（`conf` 的浅合并）。
+`settings.json` 里 `cpa` 对象存在但缺某个嵌套字段时，该字段在运行时是 `undefined`。
+初版 `isLlmConfigured()` 直接调 `.trim()`，会在 `launchMainApp()` 里抛错，此时 pet 窗口和托盘已建好，但 `initialize()`、`agent:ready`、companion、`activate` 监听全部不会发生。
+渲染端 `get-status` 被 reject，`llmConfigured` 停在 `null`，界面显示正常输入框，发出的消息没有任何反应。两层都要兜底：
+
+- `isLlmConfigured()` 自身写成 `(x ?? '').trim()`。它是公共方法，不依赖调用方兜底；字段为 `undefined` 时返回 `false`，**不抛异常**
+- `main.ts` 构造 Agent 时三个字段都写成 `settings.cpa.x ?? ''`。这样也顺带避开了 `LlmClient` 构造函数对 `baseUrl` 调 `.replace()` 的同类问题（G1 之前就存在）
+
 `sendMessage()` 的新前置行为：`isLlmConfigured()` 为 false 时，**这是函数的第一条逻辑**，排在 `ensureSession()`、`onWaiting`、`saveMessage` 之前：
 
 - 记一条 `this.log.warn('sendMessage:llmNotConfigured')`（**日志里不得带 baseUrl 或 apiKey 的值**）
@@ -218,7 +227,7 @@ class SoulLinkAgent {
 | `electron/agent/index.ts` | 模块顶部 | 导出 `LLM_NOT_CONFIGURED_ERROR` |
 | 同上 | `SoulLinkAgent.isLlmConfigured()`（新增 public） | 按 D1 判定 |
 | 同上 | `sendMessage()` 开头 | 按 §4.2 增加前置拦截 |
-| `electron/main.ts` | `launchMainApp()` | 构造 Agent 后，若 `!agent.isLlmConfigured()`，记 `mainLogger.warn('LLM not configured; chat disabled until connection is saved and the app restarts')`；`AGENT_READY` 载荷加 `llmConfigured` |
+| `electron/main.ts` | `launchMainApp()` | 构造 Agent 时 `cpa` 三字段均以 `?? ''` 兜底（§4.2）；构造后，若 `!agent.isLlmConfigured()`，记 `mainLogger.warn('LLM not configured; chat disabled until connection is saved and the app restarts')`；`AGENT_READY` 载荷加 `llmConfigured` |
 | 同上 | `IPC.AGENT_GET_STATUS` handler | 返回值加 `llmConfigured: agent?.isLlmConfigured() ?? false` |
 | 同上 | `IPC.AGENT_RESET_SESSION` handler | `AGENT_READY` 载荷加 `llmConfigured` |
 | 同上 | 上面三处 | 载荷显式标注为 `AgentStatus`（`import type { AgentStatus } from './agent/types'`），**漏写字段时由 tsc 报错**。`character` 的取值保持各处现状，不借机统一 |
@@ -236,7 +245,7 @@ class SoulLinkAgent {
 | `src/chat/NotConfiguredHint.tsx`（新建） | 组件 | 一行提示 `chat.notConfigured` 加一个按钮 `chat.openSettings`，点击发送 `window:open-settings`（沿用现有常量，不新增通道）。样式放在 `chat.module.css` |
 | `src/chat/CompactInput.tsx` | 渲染分支 | 从 store 读取 `llmConfigured`。`=== false` 时**用 `NotConfiguredHint` 替换输入行和 `PresetButtons`**，外层容器与 `visible` 相关的 class 保持不变；聚焦 effect 在此分支下不执行。**内容高度不得超过 `PetApp` 的 `INPUT_PANEL_HEIGHT`（110px）**，不改 `PetApp.tsx` |
 | `src/chat/ChatWindow.tsx` | 输入区 | `llmConfigured === false` 时：在输入区上方渲染 `NotConfiguredHint`；输入框和发送按钮 `disabled`；placeholder 用 `chat.inputPlaceholderNotConfigured`。头部连接状态不变 |
-| `src/onboarding/ConnectionStep.tsx` | props、`navRow` | 新增 prop `onSkip: () => void`；`navRow` 按「返回 / 稍后配置 / 下一步」排列，「稍后配置」使用 `btnSecondary`、**始终可点**；`navRow` 上方加一行小字 `onboarding.connection.skipHint`。**`canProceed` 不变** |
+| `src/onboarding/ConnectionStep.tsx` | props、`navRow` | 新增 prop `onSkip: () => void`；`navRow` 按「返回 / 稍后配置 / 下一步」排列，「稍后配置」使用 `btnSecondary`、**始终可点**；`navRow` 上方加一行小字 `onboarding.connection.skipHint`，使用**新增的 `.skipHint` 类**（在 `onboarding.module.css` 的 `.navRow` 之前：`font-size: 12px; line-height: 1.5; color: var(--text-muted); text-align: center; margin: -12px 0 0;`），**不要复用 `stepSubtitle`**（那是 14px 的标题副文案）。**`canProceed` 不变** |
 | `src/onboarding/OnboardingWizard.tsx` | `<ConnectionStep>` | 传入 `onSkip={next}`。`handleFinish` **不改** |
 | `src/i18n/zh-CN.json` / `en.json` | 新增键 | 见下表。**不要改动现有的 OpenClaw 文案行**（属于 backlog） |
 
@@ -274,7 +283,8 @@ class SoulLinkAgent {
 | A1 | `needsOnboarding({ onboarding:{completed:false}, cpa:{完整} })` 为 `true` |
 | A2 | `needsOnboarding({ onboarding:{completed:true}, cpa:{baseUrl:'', apiKey:'', model:'m'} })` 为 `false` |
 | A3 | `needsOnboarding({ onboarding:{completed:true}, cpa:{baseUrl:'', apiKey:'k', model:'m'} })` 为 `false` |
-| A4 | `new SoulLinkAgent(cfg).isLlmConfigured()` 的表驱动测试：`baseUrl` 为 `''` 或 `'  '` → false；`apiKey` 为 `''` → false；`model` 为 `''` → false；三者都非空 → true；`'  https://x  '`、`' k '`、`'m'` → true |
+| A4 | `new SoulLinkAgent(cfg).isLlmConfigured()` 的表驱动测试：`baseUrl`、`apiKey`、`model` 任一为 `''` 或只含空白 → false；三者都非空 → true；`'  https://x  '`、`' k '`、`'m'` → true |
+| A4b | 三个字段分别为 `undefined`（构造后覆盖内部 `config`；直接以 `undefined` 的 `baseUrl` 构造会先在 `LlmClient` 构造函数里抛错，那不是本用例要测的）：`isLlmConfigured()` **不抛异常**且返回 `false`；`model` 为 `undefined` 时 `sendMessage()` 仍走 A5 的未配置路径 |
 | A5 | 未配置、**未 `initialize()`** 的 Agent，替换 `sessionStore.saveMessage` 和 `llmClient.streamChat` 为 spy 后，`await agent.sendMessage('hi', cbs)` **正常 resolve**，并且：`onError` 恰好被调用 1 次，参数为 `('', LLM_NOT_CONFIGURED_ERROR)`；`onWaiting`、`onDelta`、`onFinal`、`onSaved` 都未被调用；`saveMessage` 和 `streamChat` 调用次数为 0；`log.warn` 以 `'sendMessage:llmNotConfigured'` 被调用，且调用参数序列化后不包含 apiKey 的值 |
 | A6 | 已配置的 Agent：现有用例 `reports a non-empty thinking-only response…` 无需修改即可通过（拦截不影响正常路径） |
 
@@ -303,7 +313,8 @@ Windows 打包态对应的目录是 `%APPDATA%\Soul Link Desktop\`。
 | M5 | **在打包产物上**：填入可用的网关 → 保存 → 横幅里点「立即重启」 | 应用重启，**不再出现引导页**。点 💬 显示正常输入框，发一条消息后气泡有回复。**这是唯一需要网关的用例**，网关不可用时只验到「输入框出现」为止，并如实记录 |
 | M6 | 在 M1 的状态下直接退出再启动 | 不出现引导页，直接显示 pet 和未配置提示（旧门禁会强制进入引导页） |
 | M7 | 在未配置状态下，通过托盘「打开聊天」打开 chat 窗口 | 输入框和发送按钮都是禁用状态，显示未配置提示。**托盘图标在 D2 完成前是空白的**，macOS 上可能点不到；点不到时把本项标为「阻塞于 D2」，不算失败 |
-| M8 | 手工编辑 `settings.json`，设置 `completed: true`、`apiKey: ""` → 启动 | 进主界面，显示未配置提示（D4） |
+| M8 | 手工编辑 `settings.json`，设置 `completed: true`，并**只把 `cpa.apiKey` 的值改成 `""`，不要删除键** → 启动 | 进主界面，显示未配置提示（D4） |
+| M8b | 手工编辑 `settings.json`，保持 `completed: true`，**删除 `cpa.model` 键**（其余字段保留有效值）→ 启动 | 与 M8 相同：进主界面、显示未配置提示；工具栏正常、托盘可用；ops 日志有 `LLM not configured` warn，**stderr 无未处理的 rejection**。用于直接验证 §4.2 的缺字段容错 |
 | M9 | 「设置 → 关于 → 重新运行初始化引导」 | 应用重启后回到引导页，「稍后配置」按钮仍然可用 |
 | M10 | 行为确认，**不判定通过或失败**：Connection 填入格式正确但网关不可达的值 → 测试失败 → 点「稍后配置」→ 完成 | 这些值被保存，`llmConfigured` 为 true，显示正常输入框；发出消息后气泡停在「···」。这是 E1 的已知范围（§9 第 2 条），**审查时不要把它当作 G1 的缺陷** |
 | M11 | M1 之后查看 `ops-*.jsonl` | 有一条 `LLM not configured` warn，内容不含 key |
