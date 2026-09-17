@@ -113,6 +113,7 @@ export function OnboardingWizard(): React.ReactElement {
             onApiKeyChange={setApiKey}
             onModelChange={setModel}
             onNext={next}
+            onSkip={next}
             onBack={back}
           />
         )}

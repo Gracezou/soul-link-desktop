@@ -10,6 +10,7 @@ interface ConnectionStepProps {
   onApiKeyChange: (v: string) => void
   onModelChange: (v: string) => void
   onNext: () => void
+  onSkip: () => void
   onBack: () => void
 }
 
@@ -21,6 +22,7 @@ export function ConnectionStep({
   onApiKeyChange,
   onModelChange,
   onNext,
+  onSkip,
   onBack,
 }: ConnectionStepProps): React.ReactElement {
   const { t } = useTranslation()
@@ -110,8 +112,13 @@ export function ConnectionStep({
         )}
       </div>
 
+      <p className={styles.stepSubtitle}>{t('onboarding.connection.skipHint')}</p>
+
       <div className={styles.navRow}>
         <button className={styles.btnSecondary} onClick={onBack}>{t('common.back')}</button>
+        <button className={styles.btnSecondary} onClick={onSkip}>
+          {t('onboarding.connection.skipBtn')}
+        </button>
         <button className={styles.btnPrimary} onClick={onNext} disabled={!canProceed}>
           {t('common.next')}
         </button>

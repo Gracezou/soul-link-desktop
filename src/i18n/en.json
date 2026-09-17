@@ -28,7 +28,9 @@
       "testingBtn": "Testing…",
       "baseUrlLabel": "API Base URL",
       "apiKeyLabel": "API Key",
-      "modelLabel": "Model"
+      "modelLabel": "Model",
+      "skipBtn": "Set up later",
+      "skipHint": "You can skip this — your pet still appears, but chat stays off until you fill this in under Settings → Connection"
     },
     "character": {
       "title": "Choose Character",
@@ -62,6 +64,9 @@
     "loading": "Baiyuan is typing…",
     "inputPlaceholder": "Send a message…",
     "inputPlaceholderWaiting": "Waiting for connection…",
+    "inputPlaceholderNotConfigured": "AI connection not set up",
+    "notConfigured": "AI connection isn't set up yet. Fill it in under Settings, save, then restart the app",
+    "openSettings": "Open Settings",
     "send": "Send",
     "openChat": "Open Chat",
     "presets": {

@@ -12,6 +12,7 @@ interface AgentMessage {
 interface AgentReadyStatus {
   ready: boolean
   character: string
+  llmConfigured?: boolean
 }
 
 declare global {
@@ -28,6 +29,7 @@ declare global {
 export function useAgent(): void {
   const addAssistantMessage = useChatStore(s => s.addAssistantMessage)
   const setConnected = useChatStore(s => s.setConnected)
+  const setLlmConfigured = useChatStore(s => s.setLlmConfigured)
   const setSessionStatus = useChatStore(s => s.setSessionStatus)
   const setAnimationFromEmotion = usePetStore(s => s.setAnimationFromEmotion)
   const addFV = usePetStore(s => s.addFV)
@@ -38,6 +40,9 @@ export function useAgent(): void {
 
     void api.invoke('agent:get-status').then((status) => {
       const s = status as AgentReadyStatus
+      if (typeof s?.llmConfigured === 'boolean') {
+        setLlmConfigured(s.llmConfigured)
+      }
       if (s?.ready) {
         setSessionStatus(s.ready, s.character)
         setConnected(true)
@@ -46,6 +51,9 @@ export function useAgent(): void {
 
     const offReady = api.on('agent:ready', (...args: unknown[]) => {
       const status = args[0] as AgentReadyStatus
+      if (typeof status?.llmConfigured === 'boolean') {
+        setLlmConfigured(status.llmConfigured)
+      }
       setSessionStatus(status.ready, status.character)
       if (status.ready) setConnected(true)
     })
@@ -63,5 +71,5 @@ export function useAgent(): void {
       offReady()
       offFinal()
     }
-  }, [addAssistantMessage, setConnected, setSessionStatus, setAnimationFromEmotion, addFV])
+  }, [addAssistantMessage, setConnected, setLlmConfigured, setSessionStatus, setAnimationFromEmotion, addFV])
 }

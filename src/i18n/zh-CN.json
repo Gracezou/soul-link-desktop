@@ -28,7 +28,9 @@
       "testingBtn": "测试中…",
       "baseUrlLabel": "API 地址",
       "apiKeyLabel": "API 密钥",
-      "modelLabel": "模型名称"
+      "modelLabel": "模型名称",
+      "skipBtn": "稍后配置",
+      "skipHint": "跳过后桌宠照常出现，但暂时不能聊天；之后可在「设置 → 连接」中补填"
     },
     "character": {
       "title": "选择角色",
@@ -62,6 +64,9 @@
     "loading": "柏源正在回复…",
     "inputPlaceholder": "发送消息…",
     "inputPlaceholderWaiting": "等待连接…",
+    "inputPlaceholderNotConfigured": "未配置 AI 连接",
+    "notConfigured": "还没有配置 AI 连接，暂时不能聊天。在设置中填写并保存，重启后生效",
+    "openSettings": "打开设置",
     "send": "发送",
     "openChat": "打开聊天",
     "presets": {

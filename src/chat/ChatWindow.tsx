@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MessageList } from './MessageList'
+import { NotConfiguredHint } from './NotConfiguredHint'
 import { useChat } from '../hooks/useChat'
 import styles from './chat.module.css'
 
 export function ChatWindow(): React.ReactElement {
   const { t } = useTranslation()
   const [input, setInput] = useState('')
-  const { messages, isLoading, isConnected, sessionReady, sendMessage } = useChat()
+  const { messages, isLoading, isConnected, sessionReady, llmConfigured, sendMessage } = useChat()
 
   async function handleSend(): Promise<void> {
     if (!input.trim()) return
@@ -45,19 +46,25 @@ export function ChatWindow(): React.ReactElement {
         <div className={styles.loadingIndicator}>{t('chat.loading')}</div>
       )}
 
+      {llmConfigured === false && <NotConfiguredHint />}
+
       <div className={styles.inputArea}>
         <input
           className={styles.textInput}
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={sessionReady ? t('chat.inputPlaceholder') : t('chat.inputPlaceholderWaiting')}
-          disabled={!sessionReady || isLoading}
+          placeholder={llmConfigured === false
+            ? t('chat.inputPlaceholderNotConfigured')
+            : sessionReady
+              ? t('chat.inputPlaceholder')
+              : t('chat.inputPlaceholderWaiting')}
+          disabled={llmConfigured === false || !sessionReady || isLoading}
         />
         <button
           className={styles.sendButton}
           onClick={() => void handleSend()}
-          disabled={!sessionReady || isLoading || !input.trim()}
+          disabled={llmConfigured === false || !sessionReady || isLoading || !input.trim()}
         >
           {t('chat.send')}
         </button>

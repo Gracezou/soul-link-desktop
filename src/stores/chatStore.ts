@@ -15,11 +15,13 @@ interface ChatState {
   isLoading: boolean
   isConnected: boolean
   sessionReady: boolean
+  llmConfigured: boolean | null
   currentCard: string
   addUserMessage: (text: string) => void
   addAssistantMessage: (text: string) => void
   setLoading: (loading: boolean) => void
   setConnected: (connected: boolean) => void
+  setLlmConfigured: (configured: boolean) => void
   setSessionStatus: (ready: boolean, card: string) => void
   clearMessages: () => void
 }
@@ -31,6 +33,7 @@ export const useChatStore = create<ChatState>((set) => ({
   isLoading: false,
   isConnected: false,
   sessionReady: false,
+  llmConfigured: null,
   currentCard: '',
 
   addUserMessage: (text) => {
@@ -58,6 +61,8 @@ export const useChatStore = create<ChatState>((set) => ({
   setLoading: (loading) => set({ isLoading: loading }),
 
   setConnected: (connected) => set({ isConnected: connected }),
+
+  setLlmConfigured: (configured) => set({ llmConfigured: configured }),
 
   setSessionStatus: (ready, card) => set({
     sessionReady: ready,

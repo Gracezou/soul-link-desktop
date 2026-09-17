@@ -171,6 +171,42 @@
   cursor: not-allowed;
 }
 
+.notConfiguredHint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--chat-input-bg);
+  border-top: 1px solid var(--divider);
+  flex-shrink: 0;
+}
+
+.notConfiguredText {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.notConfiguredButton {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--primary);
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.notConfiguredButton:hover {
+  background: var(--primary-soft, rgba(255, 105, 180, 0.1));
+}
+
 /* ── Chat Bubble Feedback ── */
 
 .chatBubble {
@@ -276,6 +312,12 @@
   opacity: 1;
   transform: translateY(0);
   max-height: 200px;
+}
+
+.compactInput .notConfiguredHint {
+  min-height: 0;
+  box-sizing: border-box;
+  border-top: none;
 }
 
 .inputRow {
