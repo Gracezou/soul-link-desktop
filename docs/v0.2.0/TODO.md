@@ -56,7 +56,7 @@
 
 ## F · 验证与发布
 
-- [ ] **F-a** 全新安装（清空 userData）→ 点「稍后配置」→ 进主界面 → **桌宠可见且在播 idle 动画**
+- [ ] **F-a** 全新安装（清空 userData）→ 在连接步骤点「稍后配置」→ 走完角色与陪伴两步 → 进主界面 → **桌宠可见且在播 idle 动画**
 - [ ] **F-b** 托盘图标在 macOS 与 Windows 均可见
 - [ ] **F-c** `<userData>/logs/` 出现 ops / api 两类 JSONL
 - [ ] **F-d** 回归：`npx tsc -p tsconfig.json --noEmit`、`npx tsc -p tsconfig.node.json --noEmit`、`npm test`
