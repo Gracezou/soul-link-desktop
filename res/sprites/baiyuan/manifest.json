@@ -1,68 +1,199 @@
 {
   "character": "baiyuan",
   "defaultAnimation": "idle",
-  "frameRate": 10,
+  "frameRate": 8,
   "animations": {
     "idle": {
-      "frames": ["idle_001.png", "idle_002.png", "idle_003.png"],
+      "frames": [
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_003.png",
+        "idle_003.png",
+        "idle_003.png",
+        "idle_003.png",
+        "idle_003.png",
+        "idle_003.png",
+        "idle_003.png",
+        "idle_003.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_001.png",
+        "idle_002.png"
+      ],
       "loop": true,
       "probability": 0.5,
       "minFV": 0
     },
+    "happy": {
+      "frames": [
+        "happy_001.png",
+        "happy_001.png",
+        "happy_001.png",
+        "happy_002.png",
+        "happy_002.png",
+        "happy_002.png",
+        "happy_003.png",
+        "happy_003.png",
+        "happy_003.png"
+      ],
+      "loop": false,
+      "probability": 0,
+      "minFV": 0,
+      "trigger": "emotion",
+      "next": "idle"
+    },
     "talk": {
-      "frames": ["talk_001.png", "talk_002.png", "talk_003.png"],
+      "frames": [
+        "talk_001.png",
+        "talk_001.png",
+        "talk_003.png",
+        "talk_003.png"
+      ],
       "loop": true,
       "probability": 0,
       "minFV": 0,
       "trigger": "on_message"
     },
-    "happy": {
-      "frames": ["happy_001.png", "happy_002.png"],
-      "loop": false,
-      "probability": 0.2,
-      "minFV": 20,
-      "next": "idle"
-    },
     "intimate": {
-      "frames": ["intimate_001.png", "intimate_002.png"],
+      "frames": [
+        "intimate_001.png",
+        "intimate_001.png",
+        "intimate_001.png",
+        "intimate_002.png",
+        "intimate_002.png",
+        "intimate_002.png"
+      ],
       "loop": false,
-      "probability": 0.1,
-      "minFV": 40,
-      "next": "idle"
+      "probability": 0,
+      "minFV": 30,
+      "trigger": "emotion",
+      "next": "happy"
     },
     "concerned": {
-      "frames": ["concerned_001.png"],
+      "frames": [
+        "concerned_001.png",
+        "concerned_001.png",
+        "concerned_001.png",
+        "concerned_002.png",
+        "concerned_002.png",
+        "concerned_002.png"
+      ],
       "loop": false,
-      "probability": 0.1,
+      "probability": 0,
       "minFV": 0,
+      "trigger": "emotion",
       "next": "idle"
     },
     "sad": {
-      "frames": ["sad_001.png"],
+      "frames": [
+        "sad_001.png",
+        "sad_001.png",
+        "sad_001.png",
+        "sad_002.png",
+        "sad_002.png",
+        "sad_002.png"
+      ],
       "loop": false,
-      "probability": 0.05,
+      "probability": 0,
       "minFV": 0,
+      "trigger": "emotion",
       "next": "idle"
     },
     "playful": {
-      "frames": ["playful_001.png", "playful_002.png"],
+      "frames": [
+        "playful_001.png",
+        "playful_001.png",
+        "playful_001.png",
+        "playful_002.png",
+        "playful_002.png",
+        "playful_002.png",
+        "playful_003.png",
+        "playful_003.png",
+        "playful_003.png"
+      ],
       "loop": false,
-      "probability": 0.15,
-      "minFV": 30,
+      "probability": 0,
+      "minFV": 10,
+      "trigger": "emotion",
       "next": "idle"
     },
     "protective": {
-      "frames": ["protective_001.png"],
+      "frames": [
+        "protective_001.png",
+        "protective_001.png",
+        "protective_001.png",
+        "protective_002.png",
+        "protective_002.png",
+        "protective_002.png"
+      ],
       "loop": false,
-      "probability": 0.05,
-      "minFV": 50,
+      "probability": 0,
+      "minFV": 0,
+      "trigger": "emotion",
       "next": "idle"
     },
-    "cooking": {
-      "frames": ["cooking_001.png", "cooking_002.png", "cooking_003.png"],
+    "sleep": {
+      "frames": [
+        "sleep_001.png",
+        "sleep_001.png",
+        "sleep_001.png",
+        "sleep_002.png",
+        "sleep_002.png",
+        "sleep_002.png"
+      ],
       "loop": true,
       "probability": 0.1,
-      "minFV": 10
+      "minFV": 0,
+      "trigger": "idle_long"
+    },
+    "wave": {
+      "frames": [
+        "wave_001.png",
+        "wave_001.png",
+        "wave_001.png",
+        "wave_002.png",
+        "wave_002.png",
+        "wave_002.png"
+      ],
+      "loop": false,
+      "probability": 0,
+      "minFV": 0,
+      "trigger": "on_greeting",
+      "next": "idle"
+    },
+    "blush": {
+      "frames": [
+        "blush_001.png",
+        "blush_001.png",
+        "blush_001.png",
+        "blush_002.png",
+        "blush_002.png",
+        "blush_002.png"
+      ],
+      "loop": false,
+      "probability": 0,
+      "minFV": 20,
+      "trigger": "emotion",
+      "next": "happy"
     }
   }
 }

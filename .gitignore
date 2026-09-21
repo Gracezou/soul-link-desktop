@@ -221,3 +221,7 @@ data/
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Sprite working archive: source frames, backups and redraw history.
+# Final frames ship from res/sprites/; keep binaries out of history.
+docs/v0.2.0/SPRITE/
