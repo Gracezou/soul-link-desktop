@@ -173,9 +173,11 @@ that connection is part of v0.2.0.
 
 ## Known Gaps
 
-- `res/sprites/baiyuan/frames/` is empty although
-  `res/sprites/baiyuan/manifest.json` names animations;
-  the pet currently falls back to placeholder rendering.
+- `sleep`, `wave` and `blush` frames ship in `res/sprites/baiyuan/` but nothing
+  plays them: `idle_long` and `on_greeting` triggers are unimplemented and
+  `blush` has no `Emotion` type (tracked as C3-4).
+- `PetCanvas` draws into a 200px backing store, so the pet is upscaled and
+  blurry on Retina displays.
 - Agent callbacks in `electron/main.ts` send lifecycle events only to petWindow,
   not the chat window.
 - Packaged CSP in `electron/main.ts` does not yet allow the `res:` fetch scheme.
@@ -187,7 +189,7 @@ that connection is part of v0.2.0.
 - `src/stores/settingsStore.ts` is unused legacy code.
 - Six legacy tests at `tests/` root are excluded by the default `npm test`.
 - No ESLint toolchain is configured.
-- Sprite frames, tray icon, and application icons are missing.
+- Tray icon and application icons are missing.
 
 Track v0.2.0 work in `docs/v0.2.0/EXECUTION_TRACKER.md`; longer-term internal
 cleanup belongs in `docs/BACKLOG.md`.
